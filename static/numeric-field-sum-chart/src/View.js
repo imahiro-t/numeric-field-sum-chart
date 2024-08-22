@@ -211,7 +211,7 @@ const View = (props) => {
               },
               title: {
                 display: true,
-                text: `Count of ${numberField.label}`,
+                text: `Count of issues with ${numberField.label}`,
               },
             },
           }}
