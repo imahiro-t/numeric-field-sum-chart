@@ -1,4 +1,4 @@
-# NumFieldSumChart
+# Numeric Field Sum Chart
 
 Sum up any numeric value like story points in project and output monthly or weekly report on dashboard.
 
@@ -10,6 +10,10 @@ Sum up any numeric value like story points in project and output monthly or week
   - Table for monthly or weekly collected records.
 
 ## Release Notes
+
+### 0.0.2
+
+- 💄 Change label of issue count chart
 
 ### 0.0.1
 
