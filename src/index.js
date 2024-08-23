@@ -82,18 +82,24 @@ resolver.define("searchIssues", async (req) => {
 
   const dateFrom = new Date(dateFromStr);
   const dateTo = new Date(dateToStr);
+  const dateToFroQuery = new Date(dateToStr);
+  dateToFroQuery.setDate(dateToFroQuery.getDate() + 1);
 
   const jql = issueType
     ? `project = ${project} and issueType = ${issueType} and ${clauseName(
         numberField
       )} >= 0 and ${clauseName(dateTimeField)} >= ${createTermCondition(
         dateFrom
-      )} and ${clauseName(dateTimeField)} < ${createTermCondition(dateTo)}`
+      )} and ${clauseName(dateTimeField)} < ${createTermCondition(
+        dateToFroQuery
+      )}`
     : `project = ${project} and ${clauseName(
         numberField
       )} >= 0 and ${clauseName(dateTimeField)} >= ${createTermCondition(
         dateFrom
-      )} and ${clauseName(dateTimeField)} < ${createTermCondition(dateTo)}`;
+      )} and ${clauseName(dateTimeField)} < ${createTermCondition(
+        dateToFroQuery
+      )}`;
 
   var bodyData = `{
     "expand": [
@@ -228,4 +234,3 @@ const initWeeklyStore = (issueTypes, dateFrom, dateTo) => {
 };
 
 export const handler = resolver.getDefinitions();
-
