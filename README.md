@@ -11,6 +11,10 @@ Sum up any numeric value like story points in project and output monthly or week
 
 ## Release Notes
 
+### 0.0.3
+
+- 🐛 fix to search issues of today
+
 ### 0.0.2
 
 - 💄 Change label of issue count chart
