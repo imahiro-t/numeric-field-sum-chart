@@ -2,6 +2,8 @@ import Resolver from "@forge/resolver";
 import api, { route } from "@forge/api";
 import { REPORT_TYPE } from "./const";
 
+const SEARCH_ISSUES_MAX_RESULTS = 100;
+
 const resolver = new Resolver();
 
 const clauseName = (id) => {
@@ -92,40 +94,27 @@ resolver.define("searchIssues", async (req) => {
         dateFrom
       )} and ${clauseName(dateTimeField)} < ${createTermCondition(
         dateToFroQuery
-      )}`
+      )} order by ${clauseName(dateTimeField)} DESC`
     : `project = ${project} and ${clauseName(
         numberField
       )} >= 0 and ${clauseName(dateTimeField)} >= ${createTermCondition(
         dateFrom
       )} and ${clauseName(dateTimeField)} < ${createTermCondition(
         dateToFroQuery
-      )}`;
+      )} order by ${clauseName(dateTimeField)} DESC`;
 
-  var bodyData = `{
-    "expand": [
-    ],
-    "fields": [
-      "${numberField}",
-      "${dateTimeField}",
-      "issuetype"
-    ],
-    "fieldsByKeys": false,
-    "jql": "${jql}",
-    "maxResults": 10000,
-    "startAt": 0
-  }`;
+  const body = {
+    fields: [numberField, dateTimeField, "issuetype"],
+    fieldsByKeys: false,
+    jql: jql,
+    maxResults: SEARCH_ISSUES_MAX_RESULTS,
+    startAt: 0,
+  };
 
-  const response = await api.asUser().requestJira(route`/rest/api/3/search`, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-    body: bodyData,
-  });
+  const issues = await searchIssuesRecursive(body, 0, []);
 
   return createResponseValue(
-    await response.json(),
+    issues,
     numberField,
     dateTimeField,
     issueType,
@@ -135,8 +124,30 @@ resolver.define("searchIssues", async (req) => {
   );
 });
 
+const searchIssuesRecursive = async (body, startAt, acc) => {
+  body.startAt = startAt;
+  const response = await api.asUser().requestJira(route`/rest/api/3/search`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  const json = await response.json();
+  if (json.startAt + json.maxResults < json.total) {
+    return searchIssuesRecursive(
+      body,
+      startAt + SEARCH_ISSUES_MAX_RESULTS,
+      acc.concat(json.issues ?? [])
+    );
+  } else {
+    return acc.concat(json.issues ?? []);
+  }
+};
+
 const createResponseValue = (
-  json,
+  issues,
   numberField,
   dateTimeField,
   issueType,
@@ -146,9 +157,9 @@ const createResponseValue = (
 ) => {
   const store =
     reportType === REPORT_TYPE.WEEKLY
-      ? initWeeklyStore(issueTypes(json, issueType), dateFrom, dateTo)
-      : initMonthlyStore(issueTypes(json, issueType), dateFrom, dateTo);
-  json?.issues?.forEach((issue) => {
+      ? initWeeklyStore(issueTypes(issues, issueType), dateFrom, dateTo)
+      : initMonthlyStore(issueTypes(issues, issueType), dateFrom, dateTo);
+  issues.forEach((issue) => {
     const value = issue.fields[numberField];
 
     const date = issue.fields[dateTimeField];
@@ -168,11 +179,9 @@ const createResponseValue = (
     .map((key) => store[key]);
 };
 
-const issueTypes = (json, issueType) => {
+const issueTypes = (issues, issueType) => {
   const unique = (value, index, array) => array.indexOf(value) === index;
-  const ret =
-    json?.issues?.map((issue) => issue.fields.issuetype.name).filter(unique) ??
-    [];
+  const ret = issues.map((issue) => issue.fields.issuetype.name).filter(unique);
   return ret == [] ? [issueType] : ret;
 };
 
