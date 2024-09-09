@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Edit from "./Edit";
 import View from "./View";
+import { useThemeObserver } from "@atlaskit/tokens";
 import { view } from "@forge/bridge";
 import {
   REPORT_TYPE,
@@ -18,7 +19,10 @@ import { formatDate } from "./util";
 
 const App = () => {
   const [context, setContext] = useState();
-
+  const theme = useThemeObserver();
+  useEffect(async () => {
+    await view.theme.enable();
+  }, []);
   useEffect(() => {
     view.getContext().then(setContext);
   }, []);
