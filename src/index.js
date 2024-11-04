@@ -1,6 +1,6 @@
 import Resolver from "@forge/resolver";
 import api, { route } from "@forge/api";
-import { REPORT_TYPE } from "./const";
+import { TARGET_TYPE, REPORT_TYPE } from "./const";
 
 const SEARCH_ISSUES_MAX_RESULTS = 100;
 
@@ -78,6 +78,7 @@ resolver.define("searchIssues", async (req) => {
     numberField,
     dateTimeField,
     reportType,
+    targetType,
     dateFromStr,
     dateToStr,
   } = req.payload;
@@ -104,7 +105,7 @@ resolver.define("searchIssues", async (req) => {
       )} order by ${clauseName(dateTimeField)} DESC`;
 
   const body = {
-    fields: [numberField, dateTimeField, "issuetype"],
+    fields: [numberField, dateTimeField, "issuetype", "assignee"],
     fieldsByKeys: false,
     jql: jql,
     maxResults: SEARCH_ISSUES_MAX_RESULTS,
@@ -119,6 +120,7 @@ resolver.define("searchIssues", async (req) => {
     dateTimeField,
     issueType,
     reportType,
+    targetType,
     dateFrom,
     dateTo
   );
@@ -152,13 +154,18 @@ const createResponseValue = (
   dateTimeField,
   issueType,
   reportType,
+  targetType,
   dateFrom,
   dateTo
 ) => {
+  const targetValues =
+    targetType === TARGET_TYPE.ASSIGNEE
+      ? assigneeNames(issues)
+      : issueTypes(issues, issueType);
   const store =
     reportType === REPORT_TYPE.WEEKLY
-      ? initWeeklyStore(issueTypes(issues, issueType), dateFrom, dateTo)
-      : initMonthlyStore(issueTypes(issues, issueType), dateFrom, dateTo);
+      ? initWeeklyStore(targetValues, new Date(dateFrom), new Date(dateTo))
+      : initMonthlyStore(targetValues, new Date(dateFrom), new Date(dateTo));
   issues.forEach((issue) => {
     const value = issue.fields[numberField];
 
@@ -167,11 +174,20 @@ const createResponseValue = (
       reportType === REPORT_TYPE.WEEKLY
         ? createWeeklyTermKey(new Date(date))
         : createMonthlyTermKey(new Date(date));
-    const issueType = issue.fields.issuetype.name;
-    const key = `${term}-${issueType}`;
-    if (store[key]) {
-      store[key].count++;
-      store[key].sum += value;
+    if (targetType === TARGET_TYPE.ASSIGNEE) {
+      const assigneeName = issue.fields.assignee?.displayName ?? "Unassigned";
+      const assigneeKey = `${term}-${assigneeName}`;
+      if (store[assigneeKey]) {
+        store[assigneeKey].count++;
+        store[assigneeKey].sum += value;
+      }
+    } else {
+      const issueType = issue.fields.issuetype.name;
+      const issueKey = `${term}-${issueType}`;
+      if (store[issueKey]) {
+        store[issueKey].count++;
+        store[issueKey].sum += value;
+      }
     }
   });
   return Object.keys(store)
@@ -183,6 +199,13 @@ const issueTypes = (issues, issueType) => {
   const unique = (value, index, array) => array.indexOf(value) === index;
   const ret = issues.map((issue) => issue.fields.issuetype.name).filter(unique);
   return ret == [] ? [issueType] : ret;
+};
+
+const assigneeNames = (issues) => {
+  const unique = (value, index, array) => array.indexOf(value) === index;
+  return issues
+    .map((issue) => issue.fields.assignee?.displayName ?? "Unassigned")
+    .filter(unique);
 };
 
 const createTermCondition = (date) => {
@@ -211,31 +234,31 @@ const createWeeklyTermKey = (date) => {
   return `${year}-${month}-${day}`;
 };
 
-const initMonthlyStore = (issueTypes, dateFrom, dateTo) => {
+const initMonthlyStore = (targetValues, dateFrom, dateTo) => {
   const store = {};
   dateFrom.setHours(0, 0, 0, 0);
   dateTo.setHours(0, 0, 0, 0);
   while (dateTo >= dateFrom) {
     const term = createMonthlyTermKey(dateTo);
-    issueTypes.forEach((issueType) => {
-      const key = `${term}-${issueType}`;
-      store[key] = { term: term, count: 0, sum: 0, issueType: issueType };
+    targetValues.forEach((targetValue) => {
+      const key = `${term}-${targetValue}`;
+      store[key] = { term: term, count: 0, sum: 0, target: targetValue };
     });
     dateTo.setMonth(dateTo.getMonth() - 1);
   }
   return store;
 };
 
-const initWeeklyStore = (issueTypes, dateFrom, dateTo) => {
+const initWeeklyStore = (targetValues, dateFrom, dateTo) => {
   const store = {};
   dateFrom.setHours(0, 0, 0, 0);
   dateTo.setHours(0, 0, 0, 0);
   dateFrom.setDate(dateFrom.getDate() - 6);
   while (dateTo >= dateFrom) {
     const term = createWeeklyTermKey(dateTo);
-    issueTypes.forEach((issueType) => {
-      const key = `${term}-${issueType}`;
-      store[key] = { term: term, count: 0, sum: 0, issueType: issueType };
+    targetValues.forEach((targetValue) => {
+      const key = `${term}-${targetValue}`;
+      store[key] = { term: term, count: 0, sum: 0, target: targetValue };
     });
     dateTo.setDate(dateTo.getDate() - 7);
   }

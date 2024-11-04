@@ -37,6 +37,7 @@ const View = (props) => {
     issueType,
     numberField,
     dateTimeField,
+    targetType,
     reportType,
     termType,
     dateFrom,
@@ -54,6 +55,7 @@ const View = (props) => {
         issueType: issueType.value,
         numberField: numberField.value,
         dateTimeField: dateTimeField.value,
+        targetType: targetType,
         reportType: reportType,
         dateFromStr:
           termType === TERM_TYPE.PAST_YEAR ? formatDate(oneYearAgo) : dateFrom,
@@ -63,17 +65,17 @@ const View = (props) => {
     }
   }, []);
 
-  const createMap = (issueType, value, map) => {
-    if (!map[issueType]) {
-      map[issueType] = [];
+  const createMap = (target, value, map) => {
+    if (!map[target]) {
+      map[target] = [];
     }
-    map[issueType].push(value);
+    map[target].push(value);
     return map;
   };
 
   const createLabels = (values) => {
     const labelMap = values.reduce(
-      (acc, value) => createMap(value.issueType, value.term, acc),
+      (acc, value) => createMap(value.target, value.term, acc),
       {}
     );
     return Object.keys(labelMap).length > 0
@@ -94,12 +96,12 @@ const View = (props) => {
   const createDataForSum = (values) => {
     const labels = createLabels(values);
     const valueMap = values.reduce(
-      (acc, value) => createMap(value.issueType, value.sum, acc),
+      (acc, value) => createMap(value.target, value.sum, acc),
       {}
     );
-    const datasets = Object.keys(valueMap).map((issueType, index) => ({
-      label: issueType,
-      data: valueMap[issueType],
+    const datasets = Object.keys(valueMap).map((target, index) => ({
+      label: target,
+      data: valueMap[target],
       borderColor: backgroundColors[index % 7],
       backgroundColor: backgroundColors[index % 7],
     }));
@@ -112,12 +114,12 @@ const View = (props) => {
   const createDataForCount = (values) => {
     const labels = createLabels(values);
     const valueMap = values.reduce(
-      (acc, value) => createMap(value.issueType, value.count, acc),
+      (acc, value) => createMap(value.target, value.count, acc),
       {}
     );
-    const datasets = Object.keys(valueMap).map((issueType, index) => ({
-      label: issueType,
-      data: valueMap[issueType],
+    const datasets = Object.keys(valueMap).map((target, index) => ({
+      label: target,
+      data: valueMap[target],
       borderColor: backgroundColors[index % 7],
       backgroundColor: backgroundColors[index % 7],
     }));
@@ -140,8 +142,8 @@ const View = (props) => {
           content: value.term,
         },
         {
-          key: createKey(value.issueType),
-          content: value.issueType,
+          key: createKey(value.target),
+          content: value.target,
         },
         {
           key: value.count,
@@ -163,8 +165,8 @@ const View = (props) => {
         isSortable: true,
       },
       {
-        key: "issueType",
-        content: "Issue Type",
+        key: "target",
+        content: "Target",
         shouldTruncate: true,
         isSortable: true,
       },

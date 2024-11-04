@@ -7,12 +7,14 @@ import { DatePicker } from "@atlaskit/datetime-picker";
 import Button, { ButtonGroup } from "@atlaskit/button";
 import { view, invoke } from "@forge/bridge";
 import {
+  TARGET_TYPE,
   REPORT_TYPE,
   TERM_TYPE,
   FIELD_NAME_PROJECT,
   FIELD_NAME_ISSUE_TYPE,
   FIELD_NAME_NUMBER_FIELD,
   FIELD_NAME_DATE_TIME_FIELD,
+  FIELD_NAME_TARGET_TYPE,
   FIELD_NAME_REPORT_TYPE,
   FIELD_NAME_TERM_TYPE,
   FIELD_NAME_DATE_FROM,
@@ -25,6 +27,7 @@ const Edit = (props) => {
     issueType,
     numberField,
     dateTimeField,
+    targetType,
     reportType,
     termType,
     dateFrom,
@@ -78,6 +81,10 @@ const Edit = (props) => {
         value: dateTimeField.id,
       }))
     : [];
+  const targetTypeOptions = [
+    { name: "targetType", value: TARGET_TYPE.ISSUE, label: "Issue" },
+    { name: "targetType", value: TARGET_TYPE.ASSIGNEE, label: "Assignee" },
+  ];
   const reportTypeOptions = [
     { name: "reportType", value: REPORT_TYPE.MONTHLY, label: "Monthly" },
     { name: "reportType", value: REPORT_TYPE.WEEKLY, label: "Weekly" },
@@ -185,6 +192,15 @@ const Edit = (props) => {
                   defaultValue={dateTimeField}
                   options={dateTimeFieldOptions}
                   onChange={handleDateTimeFieldChange}
+                />
+              )}
+            </Field>
+            <Field name={FIELD_NAME_TARGET_TYPE} label="Target Type">
+              {({ fieldProps }) => (
+                <RadioGroup
+                  {...fieldProps}
+                  defaultValue={targetType}
+                  options={targetTypeOptions}
                 />
               )}
             </Field>
