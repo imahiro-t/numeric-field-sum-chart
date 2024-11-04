@@ -11,6 +11,11 @@ Sum up any numeric value like story points in project and output monthly or week
 
 ## Release Notes
 
+### 0.0.5
+
+- ✨ Add feature to display graphs by assignee
+- 💄 Add support for dark theme
+
 ### 0.0.4
 
 - 🐛 Search issues recursively to get all issues
