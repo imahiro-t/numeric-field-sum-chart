@@ -11,6 +11,10 @@ Sum up any numeric value like story points in project and output monthly or week
 
 ## Release Notes
 
+### 0.0.6
+
+- 🐛 fix to retrieve both date and datetime fields
+
 ### 0.0.5
 
 - ✨ Add feature to display graphs by assignee
