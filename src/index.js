@@ -67,7 +67,8 @@ resolver.define("getDateTimeFields", async (req) => {
     },
   });
   return (await response.json()).filter(
-    (field) => field.schema && field.schema.type === "datetime"
+    (field) =>
+      field.schema?.type === "datetime" || field.schema?.type === "date"
   );
 });
 
