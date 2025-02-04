@@ -2,27 +2,31 @@ import React, { useEffect, useState } from "react";
 import { invoke } from "@forge/bridge";
 import { Box } from "@atlaskit/primitives";
 import DynamicTable from "@atlaskit/dynamic-table";
-import { TERM_TYPE } from "./const";
+import { REPORT_MODE, TERM_TYPE } from "./const";
 import { formatDate } from "./util";
 import {
   CategoryScale,
-  Chart,
+  Chart as ChartJS,
   Filler,
   Legend,
   LineElement,
   LinearScale,
+  BarElement,
+  ArcElement,
   PointElement,
   RadialLinearScale,
   Title,
   Tooltip,
 } from "chart.js";
-import { Line } from "react-chartjs-2";
+import { Line, Bar, Pie } from "react-chartjs-2";
 
-Chart.register(
+ChartJS.register(
   CategoryScale,
   Legend,
   LineElement,
   LinearScale,
+  BarElement,
+  ArcElement,
   PointElement,
   Title,
   Tooltip,
@@ -37,6 +41,7 @@ const View = (props) => {
     issueType,
     numberField,
     dateTimeField,
+    reportMode,
     targetType,
     reportType,
     termType,
@@ -130,6 +135,13 @@ const View = (props) => {
     "rgba(153, 102, 255, 0.5)", // Purple
     "rgba(255, 159, 64, 0.5)", // Orange
     "rgba(201, 203, 207, 0.5)", // Gray
+    "rgba(255, 99, 132, 0.5)", // Red
+    "rgba(53, 162, 235, 0.5)", // Blue
+    "rgba(75, 192, 192, 0.5)", // Green
+    "rgba(255, 206, 86, 0.5)", // Yellow
+    "rgba(153, 102, 255, 0.5)", // Purple
+    "rgba(255, 159, 64, 0.5)", // Orange
+    "rgba(201, 203, 207, 0.5)", // Gray
   ];
 
   const createDataForSum = (values) => {
@@ -165,6 +177,48 @@ const View = (props) => {
     return {
       labels: labels,
       datasets: datasets,
+    };
+  };
+
+  const createDataForPieSum = (values) => {
+    const term =
+      values.length > 0 ? values.sort((a, b) => b.order - a.order)[0].term : "";
+    const labels = values
+      .filter((value) => value.term === term)
+      .map((value) => value.target);
+    const datasets = values
+      .filter((value) => value.term === term)
+      .map((value) => value.sum);
+    return {
+      labels: labels,
+      datasets: [
+        {
+          data: datasets,
+          borderColor: backgroundColors,
+          backgroundColor: backgroundColors,
+        },
+      ],
+    };
+  };
+
+  const createDataForPieCount = (values) => {
+    const term =
+      values.length > 0 ? values.sort((a, b) => b.order - a.order)[0].term : "";
+    const labels = values
+      .filter((value) => value.term === term)
+      .map((value) => value.target);
+    const datasets = values
+      .filter((value) => value.term === term)
+      .map((value) => value.count);
+    return {
+      labels: labels,
+      datasets: [
+        {
+          data: datasets,
+          borderColor: backgroundColors,
+          backgroundColor: backgroundColors,
+        },
+      ],
     };
   };
 
@@ -224,50 +278,184 @@ const View = (props) => {
 
   return issueResponseJson ? (
     <>
-      <Box>
-        <Line
-          options={{
-            responsive: true,
-            plugins: {
-              legend: {
-                position: "bottom",
-              },
-              title: {
-                display: true,
-                text: `Sum of ${numberField.label}`,
-              },
-            },
-          }}
-          data={createDataForSum(issueResponseJson)}
-        />
-      </Box>
-      <Box padding="space.100" />
-      <Box>
-        <Line
-          options={{
-            responsive: true,
-            plugins: {
-              legend: {
-                position: "bottom",
-              },
-              title: {
-                display: true,
-                text: `Count of issues with ${numberField.label}`,
-              },
-            },
-          }}
-          data={createDataForCount(issueResponseJson)}
-        />
-      </Box>
-      <Box padding="space.100" />
-      <Box>
-        <DynamicTable
-          caption={`List of ${numberField.label}`}
-          head={head}
-          rows={createRows(issueResponseJson)}
-          rowsPerPage={20}
-        />
-      </Box>
+      {reportMode === REPORT_MODE.PIE && (
+        <>
+          <Box>
+            <Pie
+              options={{
+                plugins: {
+                  legend: {
+                    position: "bottom",
+                  },
+                  title: {
+                    display: true,
+                    text: `Percentage of ${numberField.label}`,
+                  },
+                },
+              }}
+              data={createDataForPieSum(issueResponseJson)}
+            />
+          </Box>
+          <Box padding="space.100" />
+          <Box>
+            <Pie
+              options={{
+                plugins: {
+                  legend: {
+                    position: "bottom",
+                  },
+                  title: {
+                    display: true,
+                    text: `Percentage of ${numberField.label}`,
+                  },
+                },
+              }}
+              data={createDataForPieCount(issueResponseJson)}
+            />
+          </Box>
+        </>
+      )}
+      {reportMode === REPORT_MODE.BAR && (
+        <>
+          <Box>
+            <Bar
+              options={{
+                responsive: true,
+                plugins: {
+                  legend: {
+                    position: "bottom",
+                  },
+                  title: {
+                    display: true,
+                    text: `Sum of ${numberField.label}`,
+                  },
+                },
+              }}
+              data={createDataForSum(issueResponseJson)}
+            />
+          </Box>
+          <Box padding="space.100" />
+          <Box>
+            <Bar
+              options={{
+                responsive: true,
+                plugins: {
+                  legend: {
+                    position: "bottom",
+                  },
+                  title: {
+                    display: true,
+                    text: `Count of issues with ${numberField.label}`,
+                  },
+                },
+              }}
+              data={createDataForCount(issueResponseJson)}
+            />
+          </Box>
+        </>
+      )}
+      {reportMode === REPORT_MODE.STACKED_BAR && (
+        <>
+          <Box>
+            <Bar
+              options={{
+                responsive: true,
+                x: {
+                  stacked: true,
+                },
+                y: {
+                  stacked: true,
+                },
+                plugins: {
+                  legend: {
+                    position: "bottom",
+                  },
+                  title: {
+                    display: true,
+                    text: `Sum of ${numberField.label}`,
+                  },
+                },
+              }}
+              data={createDataForSum(issueResponseJson)}
+            />
+          </Box>
+          <Box padding="space.100" />
+          <Box>
+            <Bar
+              options={{
+                responsive: true,
+                x: {
+                  stacked: true,
+                },
+                y: {
+                  stacked: true,
+                },
+                plugins: {
+                  legend: {
+                    position: "bottom",
+                  },
+                  title: {
+                    display: true,
+                    text: `Count of issues with ${numberField.label}`,
+                  },
+                },
+              }}
+              data={createDataForCount(issueResponseJson)}
+            />
+          </Box>
+        </>
+      )}
+      {reportMode === REPORT_MODE.LINE && (
+        <>
+          <Box>
+            <Line
+              options={{
+                responsive: true,
+                plugins: {
+                  legend: {
+                    position: "bottom",
+                  },
+                  title: {
+                    display: true,
+                    text: `Sum of ${numberField.label}`,
+                  },
+                },
+              }}
+              data={createDataForSum(issueResponseJson)}
+            />
+          </Box>
+          <Box padding="space.100" />
+          <Box>
+            <Line
+              options={{
+                responsive: true,
+                plugins: {
+                  legend: {
+                    position: "bottom",
+                  },
+                  title: {
+                    display: true,
+                    text: `Count of issues with ${numberField.label}`,
+                  },
+                },
+              }}
+              data={createDataForCount(issueResponseJson)}
+            />
+          </Box>
+        </>
+      )}
+      {reportMode === REPORT_MODE.TABLE && (
+        <>
+          <Box>
+            <DynamicTable
+              caption={`List of ${numberField.label}`}
+              head={head}
+              rows={createRows(issueResponseJson)}
+              rowsPerPage={30}
+            />
+          </Box>
+        </>
+      )}
     </>
   ) : (
     <></>

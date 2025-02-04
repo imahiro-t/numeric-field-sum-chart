@@ -1,6 +1,9 @@
 export const REPORT_MODE = {
-  NUMERIC_FIELD_REPORT: "numericFieldReport",
-  SPRINT_REPORT: "sprintReport",
+  LINE: "line",
+  BAR: "bar",
+  STACKED_BAR: "stackedBar",
+  PIE: "pie",
+  TABLE: "table",
 };
 
 export const TARGET_TYPE = {

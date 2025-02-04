@@ -7,6 +7,7 @@ import { DatePicker } from "@atlaskit/datetime-picker";
 import Button, { ButtonGroup } from "@atlaskit/button";
 import { view, invoke } from "@forge/bridge";
 import {
+  REPORT_MODE,
   TARGET_TYPE,
   REPORT_TYPE,
   TERM_TYPE,
@@ -14,6 +15,7 @@ import {
   FIELD_NAME_ISSUE_TYPE,
   FIELD_NAME_NUMBER_FIELD,
   FIELD_NAME_DATE_TIME_FIELD,
+  FIELD_NAME_REPORT_MODE,
   FIELD_NAME_TARGET_TYPE,
   FIELD_NAME_REPORT_TYPE,
   FIELD_NAME_TERM_TYPE,
@@ -27,6 +29,7 @@ const Edit = (props) => {
     issueType,
     numberField,
     dateTimeField,
+    reportMode,
     targetType,
     reportType,
     termType,
@@ -89,6 +92,17 @@ const Edit = (props) => {
     { name: "reportType", value: REPORT_TYPE.MONTHLY, label: "Monthly" },
     { name: "reportType", value: REPORT_TYPE.WEEKLY, label: "Weekly" },
     { name: "reportType", value: REPORT_TYPE.SPRINT, label: "Sprint" },
+  ];
+  const reportModeOptions = [
+    { name: "reportMode", value: REPORT_MODE.LINE, label: "Line Chart" },
+    { name: "reportMode", value: REPORT_MODE.BAR, label: "Bar Chart" },
+    {
+      name: "reportMode",
+      value: REPORT_MODE.STACKED_BAR,
+      label: "Stacked Bar Chart",
+    },
+    { name: "reportMode", value: REPORT_MODE.PIE, label: "Pie Chart" },
+    { name: "reportMode", value: REPORT_MODE.TABLE, label: "Table" },
   ];
   const termTypeOptions = [
     { name: "termType", value: TERM_TYPE.PAST_YEAR, label: "Past a Year" },
@@ -215,6 +229,15 @@ const Edit = (props) => {
                   {...fieldProps}
                   defaultValue={reportType}
                   options={reportTypeOptions}
+                />
+              )}
+            </Field>
+            <Field name={FIELD_NAME_REPORT_MODE} label="Report Mode">
+              {({ fieldProps }) => (
+                <RadioGroup
+                  {...fieldProps}
+                  defaultValue={reportMode}
+                  options={reportModeOptions}
                 />
               )}
             </Field>

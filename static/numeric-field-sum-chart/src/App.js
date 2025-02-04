@@ -4,6 +4,7 @@ import View from "./View";
 import { useThemeObserver } from "@atlaskit/tokens";
 import { view } from "@forge/bridge";
 import {
+  REPORT_MODE,
   TARGET_TYPE,
   REPORT_TYPE,
   TERM_TYPE,
@@ -11,6 +12,7 @@ import {
   FIELD_NAME_ISSUE_TYPE,
   FIELD_NAME_NUMBER_FIELD,
   FIELD_NAME_DATE_TIME_FIELD,
+  FIELD_NAME_REPORT_MODE,
   FIELD_NAME_TARGET_TYPE,
   FIELD_NAME_REPORT_TYPE,
   FIELD_NAME_TERM_TYPE,
@@ -51,6 +53,8 @@ const App = () => {
   const issueType = gadgetConfiguration[FIELD_NAME_ISSUE_TYPE];
   const numberField = gadgetConfiguration[FIELD_NAME_NUMBER_FIELD];
   const dateTimeField = gadgetConfiguration[FIELD_NAME_DATE_TIME_FIELD];
+  const reportMode =
+    gadgetConfiguration[FIELD_NAME_REPORT_MODE] ?? REPORT_MODE.LINE;
   const targetType =
     gadgetConfiguration[FIELD_NAME_TARGET_TYPE] ?? TARGET_TYPE.ISSUE;
   const reportType =
@@ -68,6 +72,7 @@ const App = () => {
       issueType={issueType}
       numberField={numberField}
       dateTimeField={dateTimeField}
+      reportMode={reportMode}
       targetType={targetType}
       reportType={reportType}
       termType={termType}
@@ -80,6 +85,7 @@ const App = () => {
       issueType={issueType}
       numberField={numberField}
       dateTimeField={dateTimeField}
+      reportMode={reportMode}
       targetType={targetType}
       reportType={reportType}
       termType={termType}

@@ -307,7 +307,13 @@ const initMonthlyStore = (targetValues, dateFrom, dateTo) => {
     const term = createMonthlyTermKey(dateTo);
     targetValues.forEach((targetValue) => {
       const key = `${term}-${targetValue}`;
-      store[key] = { term: term, count: 0, sum: 0, target: targetValue };
+      store[key] = {
+        term: term,
+        order: Number(term.replace("-", "")),
+        count: 0,
+        sum: 0,
+        target: targetValue,
+      };
     });
     dateTo.setMonth(dateTo.getMonth() - 1);
   }
@@ -323,7 +329,13 @@ const initWeeklyStore = (targetValues, dateFrom, dateTo) => {
     const term = createWeeklyTermKey(dateTo);
     targetValues.forEach((targetValue) => {
       const key = `${term}-${targetValue}`;
-      store[key] = { term: term, count: 0, sum: 0, target: targetValue };
+      store[key] = {
+        term: term,
+        order: Number(term.replace("-", "")),
+        count: 0,
+        sum: 0,
+        target: targetValue,
+      };
     });
     dateTo.setDate(dateTo.getDate() - 7);
   }
@@ -336,7 +348,13 @@ const initSprintStore = (targetValues, minSprint, maxSprint) => {
     targetValues.forEach((targetValue) => {
       const term = `Sprint ${sprint}`;
       const key = `${term}-${targetValue}`;
-      store[key] = { term: term, count: 0, sum: 0, target: targetValue };
+      store[key] = {
+        term: term,
+        order: sprint,
+        count: 0,
+        sum: 0,
+        target: targetValue,
+      };
     });
   }
   return store;
