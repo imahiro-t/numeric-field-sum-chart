@@ -84,29 +84,47 @@ resolver.define("searchIssues", async (req) => {
     dateToStr,
   } = req.payload;
 
+  const sprintField = await getSprintFieldId();
   const dateFrom = new Date(dateFromStr);
   const dateTo = new Date(dateToStr);
   const dateToFroQuery = new Date(dateToStr);
   dateToFroQuery.setDate(dateToFroQuery.getDate() + 1);
 
-  const jql = issueType
-    ? `project = ${project} and issueType = ${issueType} and ${clauseName(
-        numberField
-      )} >= 0 and ${clauseName(dateTimeField)} >= ${createTermCondition(
-        dateFrom
-      )} and ${clauseName(dateTimeField)} < ${createTermCondition(
-        dateToFroQuery
-      )} order by ${clauseName(dateTimeField)} DESC`
-    : `project = ${project} and ${clauseName(
-        numberField
-      )} >= 0 and ${clauseName(dateTimeField)} >= ${createTermCondition(
-        dateFrom
-      )} and ${clauseName(dateTimeField)} < ${createTermCondition(
-        dateToFroQuery
-      )} order by ${clauseName(dateTimeField)} DESC`;
+  const issueTypesCondition = (issueTypes) => {
+    if (issueType.length === 0) return "";
+    let condition = "";
+    issueTypes.forEach((issueType, index) => {
+      if (index === 0) {
+        condition = `(issueType = ${issueType}`;
+      } else {
+        condition = `${condition} or issueType = ${issueType}`;
+      }
+    });
+    condition = `${condition})`;
+    return condition;
+  };
+
+  const jql =
+    issueType.length > 0
+      ? `project = ${project} and ${issueTypesCondition(
+          issueType
+        )} and ${clauseName(numberField)} >= 0 and ${clauseName(
+          dateTimeField
+        )} >= ${createTermCondition(dateFrom)} and ${clauseName(
+          dateTimeField
+        )} < ${createTermCondition(dateToFroQuery)} order by ${clauseName(
+          dateTimeField
+        )} DESC`
+      : `project = ${project} and ${clauseName(
+          numberField
+        )} >= 0 and ${clauseName(dateTimeField)} >= ${createTermCondition(
+          dateFrom
+        )} and ${clauseName(dateTimeField)} < ${createTermCondition(
+          dateToFroQuery
+        )} order by ${clauseName(dateTimeField)} DESC`;
 
   const body = {
-    fields: [numberField, dateTimeField, "issuetype", "assignee"],
+    fields: [numberField, dateTimeField, sprintField, "issuetype", "assignee"],
     fieldsByKeys: false,
     jql: jql,
     maxResults: SEARCH_ISSUES_MAX_RESULTS,
@@ -115,17 +133,56 @@ resolver.define("searchIssues", async (req) => {
 
   const issues = await searchIssuesRecursive(body, 0, []);
 
+  const extractLastNumber = (str) => {
+    const match = str.match(/\d+$/);
+    return match ? match[0] : null;
+  };
+
+  issues.forEach((issue) => {
+    if (issue.fields[sprintField]) {
+      issue.fields[sprintField] = Math.max(
+        ...issue.fields[sprintField]
+          .map((sprint) => sprint.name)
+          .map(extractLastNumber)
+      );
+    }
+  });
+  const minSprint = Math.min(
+    ...issues
+      .filter((issue) => issue.fields[sprintField])
+      .map((issue) => issue.fields[sprintField] ?? 0)
+  );
+  const maxSprint = Math.max(
+    ...issues
+      .filter((issue) => issue.fields[sprintField])
+      .map((issue) => issue.fields[sprintField] ?? 0)
+  );
+
   return createResponseValue(
     issues,
     numberField,
     dateTimeField,
-    issueType,
+    sprintField,
     reportType,
     targetType,
     dateFrom,
-    dateTo
+    dateTo,
+    minSprint,
+    maxSprint
   );
 });
+
+const getSprintFieldId = async () => {
+  const response = await api.asUser().requestJira(route`/rest/api/3/field`, {
+    headers: {
+      Accept: "application/json",
+    },
+  });
+  const sprintFields = (await response.json()).filter(
+    (field) => field.name === "Sprint"
+  );
+  return sprintFields[0]?.id;
+};
 
 const searchIssuesRecursive = async (body, startAt, acc) => {
   body.startAt = startAt;
@@ -153,28 +210,35 @@ const createResponseValue = (
   issues,
   numberField,
   dateTimeField,
-  issueType,
+  sprintField,
   reportType,
   targetType,
   dateFrom,
-  dateTo
+  dateTo,
+  minSprint,
+  maxSprint
 ) => {
   const targetValues =
     targetType === TARGET_TYPE.ASSIGNEE
       ? assigneeNames(issues)
-      : issueTypes(issues, issueType);
+      : issueTypes(issues);
   const store =
     reportType === REPORT_TYPE.WEEKLY
       ? initWeeklyStore(targetValues, new Date(dateFrom), new Date(dateTo))
-      : initMonthlyStore(targetValues, new Date(dateFrom), new Date(dateTo));
+      : reportType === REPORT_TYPE.MONTHLY
+      ? initMonthlyStore(targetValues, new Date(dateFrom), new Date(dateTo))
+      : initSprintStore(targetValues, minSprint, maxSprint);
   issues.forEach((issue) => {
     const value = issue.fields[numberField];
 
     const date = issue.fields[dateTimeField];
+    const sprint = issue.fields[sprintField];
     const term =
       reportType === REPORT_TYPE.WEEKLY
         ? createWeeklyTermKey(new Date(date))
-        : createMonthlyTermKey(new Date(date));
+        : reportType === REPORT_TYPE.MONTHLY
+        ? createMonthlyTermKey(new Date(date))
+        : `Sprint ${sprint}`;
     if (targetType === TARGET_TYPE.ASSIGNEE) {
       const assigneeName = issue.fields.assignee?.displayName ?? "Unassigned";
       const assigneeKey = `${term}-${assigneeName}`;
@@ -196,10 +260,10 @@ const createResponseValue = (
     .map((key) => store[key]);
 };
 
-const issueTypes = (issues, issueType) => {
+const issueTypes = (issues) => {
   const unique = (value, index, array) => array.indexOf(value) === index;
   const ret = issues.map((issue) => issue.fields.issuetype.name).filter(unique);
-  return ret == [] ? [issueType] : ret;
+  return ret;
 };
 
 const assigneeNames = (issues) => {
@@ -262,6 +326,18 @@ const initWeeklyStore = (targetValues, dateFrom, dateTo) => {
       store[key] = { term: term, count: 0, sum: 0, target: targetValue };
     });
     dateTo.setDate(dateTo.getDate() - 7);
+  }
+  return store;
+};
+
+const initSprintStore = (targetValues, minSprint, maxSprint) => {
+  const store = {};
+  for (var sprint = minSprint; sprint <= maxSprint; sprint++) {
+    targetValues.forEach((targetValue) => {
+      const term = `Sprint ${sprint}`;
+      const key = `${term}-${targetValue}`;
+      store[key] = { term: term, count: 0, sum: 0, target: targetValue };
+    });
   }
   return store;
 };

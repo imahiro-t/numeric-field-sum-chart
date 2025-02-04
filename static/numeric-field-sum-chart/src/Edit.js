@@ -88,9 +88,13 @@ const Edit = (props) => {
   const reportTypeOptions = [
     { name: "reportType", value: REPORT_TYPE.MONTHLY, label: "Monthly" },
     { name: "reportType", value: REPORT_TYPE.WEEKLY, label: "Weekly" },
+    { name: "reportType", value: REPORT_TYPE.SPRINT, label: "Sprint" },
   ];
   const termTypeOptions = [
-    { name: "termType", value: TERM_TYPE.PAST_YEAR, label: "Past Year" },
+    { name: "termType", value: TERM_TYPE.PAST_YEAR, label: "Past a Year" },
+    { name: "termType", value: TERM_TYPE.PAST_1_MONTH, label: "Past a Month" },
+    { name: "termType", value: TERM_TYPE.PAST_3_MONTH, label: "Past 3 Months" },
+    { name: "termType", value: TERM_TYPE.PAST_6_MONTH, label: "Past 6 Months" },
     { name: "termType", value: TERM_TYPE.DATE_RANGE, label: "Date Range" },
   ];
 
@@ -161,6 +165,7 @@ const Edit = (props) => {
                   {...fieldProps}
                   defaultValue={issueType}
                   options={issueTypeOptions}
+                  isMulti
                   onChange={handleIssueTypeChange}
                 />
               )}

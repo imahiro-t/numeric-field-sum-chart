@@ -46,21 +46,60 @@ const View = (props) => {
 
   const currentDate = new Date();
   const oneYearAgo = new Date();
+  const oneMonthAgo = new Date();
+  const threeMonthAgo = new Date();
+  const sixMonthAgo = new Date();
   oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+  if (oneMonthAgo.getMonth() < 1) {
+    oneMonthAgo.setFullYear(oneMonthAgo.getFullYear() - 1);
+    oneMonthAgo.setMonth(12 + oneMonthAgo.getMonth() - 1);
+  } else {
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+  }
+  if (threeMonthAgo.getMonth() < 3) {
+    threeMonthAgo.setFullYear(threeMonthAgo.getFullYear() - 1);
+    threeMonthAgo.setMonth(12 + threeMonthAgo.getMonth() - 3);
+  } else {
+    threeMonthAgo.setMonth(threeMonthAgo.getMonth() - 3);
+  }
+  if (sixMonthAgo.getMonth() < 6) {
+    sixMonthAgo.setFullYear(sixMonthAgo.getFullYear() - 1);
+    sixMonthAgo.setMonth(12 + sixMonthAgo.getMonth() - 6);
+  } else {
+    sixMonthAgo.setMonth(sixMonthAgo.getMonth() - 6);
+  }
 
   useEffect(() => {
     if (project && issueType && numberField && dateTimeField) {
       invoke("searchIssues", {
         project: project.value,
-        issueType: issueType.value,
+        issueType: Array.isArray(issueType)
+          ? issueType.filter((x) => x.value.length > 0).map((x) => x.value)
+          : [issueType.value],
         numberField: numberField.value,
         dateTimeField: dateTimeField.value,
         targetType: targetType,
         reportType: reportType,
         dateFromStr:
-          termType === TERM_TYPE.PAST_YEAR ? formatDate(oneYearAgo) : dateFrom,
+          termType === TERM_TYPE.PAST_YEAR
+            ? formatDate(oneYearAgo)
+            : termType === TERM_TYPE.PAST_1_MONTH
+            ? formatDate(oneMonthAgo)
+            : termType === TERM_TYPE.PAST_3_MONTH
+            ? formatDate(threeMonthAgo)
+            : termType === TERM_TYPE.PAST_6_MONTH
+            ? formatDate(sixMonthAgo)
+            : dateFrom,
         dateToStr:
-          termType === TERM_TYPE.PAST_YEAR ? formatDate(currentDate) : dateTo,
+          termType === TERM_TYPE.PAST_YEAR
+            ? formatDate(currentDate)
+            : termType === TERM_TYPE.PAST_1_MONTH
+            ? formatDate(currentDate)
+            : termType === TERM_TYPE.PAST_3_MONTH
+            ? formatDate(currentDate)
+            : termType === TERM_TYPE.PAST_6_MONTH
+            ? formatDate(currentDate)
+            : dateTo,
       }).then(setIssueResponseJson);
     }
   }, []);
