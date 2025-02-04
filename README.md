@@ -11,6 +11,13 @@ Sum up any numeric value like story points in project and output monthly or week
 
 ## Release Notes
 
+### 0.0.7
+
+- ✨ Add feature to select multiple issue types
+- ✨ Add feature to select bar, stacked bar, pie charts
+- ✨ Add feature to select 1, 3, 6 month(s) term
+- ✨ Add feature to report by sprint
+
 ### 0.0.6
 
 - 🐛 fix to retrieve both date and datetime fields
