@@ -95,13 +95,33 @@ const Edit = (props) => {
   ];
   const reportModeOptions = [
     { name: "reportMode", value: REPORT_MODE.LINE, label: "Line Chart" },
+    {
+      name: "reportMode",
+      value: REPORT_MODE.LINE_WITH_BAR,
+      label: "Line with Bar Chart",
+    },
     { name: "reportMode", value: REPORT_MODE.BAR, label: "Bar Chart" },
+    {
+      name: "reportMode",
+      value: REPORT_MODE.BAR_WITH_LINE,
+      label: "Bar with Line Chart",
+    },
     {
       name: "reportMode",
       value: REPORT_MODE.STACKED_BAR,
       label: "Stacked Bar Chart",
     },
+    {
+      name: "reportMode",
+      value: REPORT_MODE.STACKED_BAR_WITH_LINE,
+      label: "Stacked Bar with Line Chart",
+    },
     { name: "reportMode", value: REPORT_MODE.PIE, label: "Pie Chart" },
+    {
+      name: "reportMode",
+      value: REPORT_MODE.DOUGHNUT,
+      label: "Doughnut Chart",
+    },
     { name: "reportMode", value: REPORT_MODE.TABLE, label: "Table" },
   ];
   const termTypeOptions = [

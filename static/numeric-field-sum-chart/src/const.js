@@ -1,8 +1,12 @@
 export const REPORT_MODE = {
   LINE: "line",
+  LINE_WITH_BAR: "lineWithBars",
   BAR: "bar",
+  BAR_WITH_LINE: "barWithLine",
   STACKED_BAR: "stackedBar",
+  STACKED_BAR_WITH_LINE: "stackedBarWithLine",
   PIE: "pie",
+  DOUGHNUT: "doughnut",
   TABLE: "table",
 };
 

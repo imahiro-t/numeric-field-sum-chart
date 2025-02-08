@@ -18,7 +18,7 @@ import {
   Title,
   Tooltip,
 } from "chart.js";
-import { Line, Bar, Pie } from "react-chartjs-2";
+import { Line, Bar, Pie, Doughnut } from "react-chartjs-2";
 
 ChartJS.register(
   CategoryScale,
@@ -127,14 +127,7 @@ const View = (props) => {
       : [];
   };
 
-  const backgroundColors = [
-    "rgba(255, 99, 132, 0.5)", // Red
-    "rgba(53, 162, 235, 0.5)", // Blue
-    "rgba(75, 192, 192, 0.5)", // Green
-    "rgba(255, 206, 86, 0.5)", // Yellow
-    "rgba(153, 102, 255, 0.5)", // Purple
-    "rgba(255, 159, 64, 0.5)", // Orange
-    "rgba(201, 203, 207, 0.5)", // Gray
+  const sumColors = [
     "rgba(255, 99, 132, 0.5)", // Red
     "rgba(53, 162, 235, 0.5)", // Blue
     "rgba(75, 192, 192, 0.5)", // Green
@@ -143,6 +136,49 @@ const View = (props) => {
     "rgba(255, 159, 64, 0.5)", // Orange
     "rgba(201, 203, 207, 0.5)", // Gray
   ];
+
+  const countColors = [
+    "rgba(255, 99, 132, 0.3)", // Red
+    "rgba(53, 162, 235, 0.3)", // Blue
+    "rgba(75, 192, 192, 0.3)", // Green
+    "rgba(255, 206, 86, 0.3)", // Yellow
+    "rgba(153, 102, 255, 0.3)", // Purple
+    "rgba(255, 159, 64, 0.3)", // Orange
+    "rgba(201, 203, 207, 0.3)", // Gray
+  ];
+
+  const createDataForSumWithCount = (values, secondType) => {
+    const labels = createLabels(values);
+    const valueMap = values.reduce(
+      (acc, value) => createMap(value.target, value.sum, acc),
+      {}
+    );
+    const datasets = Object.keys(valueMap).map((target, index) => ({
+      label: target,
+      yAxisID: "y",
+      data: valueMap[target],
+      borderColor: sumColors[index % 7],
+      backgroundColor: sumColors[index % 7],
+    }));
+
+    const valueMap2 = values.reduce(
+      (acc, value) => createMap(value.target, value.count, acc),
+      {}
+    );
+    const datasets2 = Object.keys(valueMap2).map((target, index) => ({
+      type: secondType,
+      label: target,
+      yAxisID: "y1",
+      data: valueMap2[target],
+      borderColor: countColors[index % 7],
+      backgroundColor: countColors[index % 7],
+    }));
+
+    return {
+      labels: labels,
+      datasets: datasets.concat(datasets2),
+    };
+  };
 
   const createDataForSum = (values) => {
     const labels = createLabels(values);
@@ -153,8 +189,8 @@ const View = (props) => {
     const datasets = Object.keys(valueMap).map((target, index) => ({
       label: target,
       data: valueMap[target],
-      borderColor: backgroundColors[index % 7],
-      backgroundColor: backgroundColors[index % 7],
+      borderColor: sumColors[index % 7],
+      backgroundColor: sumColors[index % 7],
     }));
     return {
       labels: labels,
@@ -171,8 +207,8 @@ const View = (props) => {
     const datasets = Object.keys(valueMap).map((target, index) => ({
       label: target,
       data: valueMap[target],
-      borderColor: backgroundColors[index % 7],
-      backgroundColor: backgroundColors[index % 7],
+      borderColor: countColors[index % 7],
+      backgroundColor: countColors[index % 7],
     }));
     return {
       labels: labels,
@@ -194,8 +230,8 @@ const View = (props) => {
       datasets: [
         {
           data: datasets,
-          borderColor: backgroundColors,
-          backgroundColor: backgroundColors,
+          borderColor: sumColors,
+          backgroundColor: sumColors,
         },
       ],
     };
@@ -215,8 +251,8 @@ const View = (props) => {
       datasets: [
         {
           data: datasets,
-          borderColor: backgroundColors,
-          backgroundColor: backgroundColors,
+          borderColor: countColors,
+          backgroundColor: countColors,
         },
       ],
     };
@@ -289,15 +325,12 @@ const View = (props) => {
                   },
                   title: {
                     display: true,
-                    text: `Percentage of ${numberField.label}`,
+                    text: `Sum of ${numberField.label}`,
                   },
                 },
               }}
               data={createDataForPieSum(issueResponseJson)}
             />
-          </Box>
-          <Box padding="space.100" />
-          <Box>
             <Pie
               options={{
                 plugins: {
@@ -306,7 +339,41 @@ const View = (props) => {
                   },
                   title: {
                     display: true,
-                    text: `Percentage of ${numberField.label}`,
+                    text: `Count of issues with ${numberField.label}`,
+                  },
+                },
+              }}
+              data={createDataForPieCount(issueResponseJson)}
+            />
+          </Box>
+        </>
+      )}
+      {reportMode === REPORT_MODE.DOUGHNUT && (
+        <>
+          <Box>
+            <Doughnut
+              options={{
+                plugins: {
+                  legend: {
+                    position: "bottom",
+                  },
+                  title: {
+                    display: true,
+                    text: `Sum of ${numberField.label}`,
+                  },
+                },
+              }}
+              data={createDataForPieSum(issueResponseJson)}
+            />
+            <Doughnut
+              options={{
+                plugins: {
+                  legend: {
+                    position: "bottom",
+                  },
+                  title: {
+                    display: true,
+                    text: `Count of issues with ${numberField.label}`,
                   },
                 },
               }}
@@ -350,6 +417,54 @@ const View = (props) => {
                 },
               }}
               data={createDataForCount(issueResponseJson)}
+            />
+          </Box>
+        </>
+      )}
+      {reportMode === REPORT_MODE.BAR_WITH_LINE && (
+        <>
+          <Box>
+            <Bar
+              options={{
+                responsive: true,
+                plugins: {
+                  legend: {
+                    position: "bottom",
+                  },
+                  title: {
+                    display: true,
+                    text: `Sum of ${numberField.label}`,
+                  },
+                },
+                scales: {
+                  y: {
+                    type: "linear",
+                    display: true,
+                    position: "left",
+                    ticks: {
+                      color: "rgba(0, 0, 0, 1)",
+                    },
+                    grid: {
+                      drawBorder: true,
+                      drawTicks: true,
+                      color: "rgba(0, 0, 0, 0.2)",
+                    },
+                  },
+                  y1: {
+                    type: "linear",
+                    display: true,
+                    position: "right",
+                    title: {
+                      display: true,
+                      text: "Count of issues",
+                      font: {
+                        size: 12,
+                      },
+                    },
+                  },
+                },
+              }}
+              data={createDataForSumWithCount(issueResponseJson, "line")}
             />
           </Box>
         </>
@@ -405,6 +520,60 @@ const View = (props) => {
           </Box>
         </>
       )}
+      {reportMode === REPORT_MODE.STACKED_BAR_WITH_LINE && (
+        <>
+          <Box>
+            <Bar
+              options={{
+                responsive: true,
+                x: {
+                  stacked: true,
+                },
+                y: {
+                  stacked: true,
+                },
+                plugins: {
+                  legend: {
+                    position: "bottom",
+                  },
+                  title: {
+                    display: true,
+                    text: `Sum of ${numberField.label}`,
+                  },
+                },
+                scales: {
+                  y: {
+                    type: "linear",
+                    display: true,
+                    position: "left",
+                    ticks: {
+                      color: "rgba(0, 0, 0, 1)",
+                    },
+                    grid: {
+                      drawBorder: true,
+                      drawTicks: true,
+                      color: "rgba(0, 0, 0, 0.2)",
+                    },
+                  },
+                  y1: {
+                    type: "linear",
+                    display: true,
+                    position: "right",
+                    title: {
+                      display: true,
+                      text: "Count of issues",
+                      font: {
+                        size: 12,
+                      },
+                    },
+                  },
+                },
+              }}
+              data={createDataForSumWithCount(issueResponseJson, "line")}
+            />
+          </Box>
+        </>
+      )}
       {reportMode === REPORT_MODE.LINE && (
         <>
           <Box>
@@ -440,6 +609,54 @@ const View = (props) => {
                 },
               }}
               data={createDataForCount(issueResponseJson)}
+            />
+          </Box>
+        </>
+      )}
+      {reportMode === REPORT_MODE.LINE_WITH_BAR && (
+        <>
+          <Box>
+            <Line
+              options={{
+                responsive: true,
+                plugins: {
+                  legend: {
+                    position: "bottom",
+                  },
+                  title: {
+                    display: true,
+                    text: `Sum of ${numberField.label}`,
+                  },
+                },
+                scales: {
+                  y: {
+                    type: "linear",
+                    display: true,
+                    position: "left",
+                    ticks: {
+                      color: "rgba(0, 0, 0, 1)",
+                    },
+                    grid: {
+                      drawBorder: true,
+                      drawTicks: true,
+                      color: "rgba(0, 0, 0, 0.2)",
+                    },
+                  },
+                  y1: {
+                    type: "linear",
+                    display: true,
+                    position: "right",
+                    title: {
+                      display: true,
+                      text: "Count of issues",
+                      font: {
+                        size: 12,
+                      },
+                    },
+                  },
+                },
+              }}
+              data={createDataForSumWithCount(issueResponseJson, "bar")}
             />
           </Box>
         </>
