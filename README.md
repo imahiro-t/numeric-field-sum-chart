@@ -11,6 +11,10 @@ Sum up any numeric value like story points in project and output monthly or week
 
 ## Release Notes
 
+### 0.0.8
+
+- ✨ Add feature to select line with bar, bar with line, stacked bar with line, doughnut charts
+
 ### 0.0.7
 
 - ✨ Add feature to select multiple issue types
