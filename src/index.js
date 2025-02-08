@@ -293,8 +293,9 @@ const createResponseValue = (
     }
   });
   return Object.keys(store)
+    .sort()
     .map((key) => store[key])
-    .sort((a, b) => a.order - b.order);
+    .sort((a, b) => Number(a.order) - Number(b.order));
 };
 
 const issueTypes = (issues) => {
