@@ -7,4 +7,5 @@ export const REPORT_TYPE = {
   MONTHLY: "monthly",
   WEEKLY: "weekly",
   SPRINT: "sprint",
+  CUSTOM: "custom",
 };

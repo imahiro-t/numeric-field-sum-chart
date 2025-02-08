@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { invoke } from "@forge/bridge";
 import { Box } from "@atlaskit/primitives";
 import DynamicTable from "@atlaskit/dynamic-table";
-import { REPORT_MODE, TERM_TYPE } from "./const";
+import { REPORT_MODE, REPORT_TYPE, TARGET_TYPE, TERM_TYPE } from "./const";
 import { formatDate } from "./util";
 import {
   CategoryScale,
@@ -40,6 +40,7 @@ const View = (props) => {
     project,
     issueType,
     numberField,
+    customReportTypeField,
     dateTimeField,
     reportMode,
     targetType,
@@ -48,6 +49,15 @@ const View = (props) => {
     dateFrom,
     dateTo,
   } = props;
+
+  const reportTypeLabel =
+    reportType === REPORT_TYPE.SPRINT
+      ? "Sprint"
+      : reportType === REPORT_TYPE.CUSTOM
+      ? customReportTypeField?.label ?? ""
+      : "Term";
+  const targetTypeLabel =
+    targetType === TARGET_TYPE.ISSUE ? "Issues" : "Assignees";
 
   const currentDate = new Date();
   const oneYearAgo = new Date();
@@ -82,6 +92,7 @@ const View = (props) => {
           ? issueType.filter((x) => x.value.length > 0).map((x) => x.value)
           : [issueType.value],
         numberField: numberField.value,
+        customReportTypeField: customReportTypeField?.value,
         dateTimeField: dateTimeField.value,
         targetType: targetType,
         reportType: reportType,
@@ -290,7 +301,7 @@ const View = (props) => {
     cells: [
       {
         key: "term",
-        content: "Term",
+        content: reportTypeLabel,
         isSortable: true,
       },
       {
@@ -301,7 +312,7 @@ const View = (props) => {
       },
       {
         key: "count",
-        content: "Issue Count",
+        content: "Count",
         isSortable: true,
       },
       {
@@ -339,7 +350,7 @@ const View = (props) => {
                   },
                   title: {
                     display: true,
-                    text: `Count of issues with ${numberField.label}`,
+                    text: `Count of ${targetTypeLabel} with ${numberField.label}`,
                   },
                 },
               }}
@@ -373,7 +384,7 @@ const View = (props) => {
                   },
                   title: {
                     display: true,
-                    text: `Count of issues with ${numberField.label}`,
+                    text: `Count of ${targetTypeLabel} with ${numberField.label}`,
                   },
                 },
               }}
@@ -412,7 +423,7 @@ const View = (props) => {
                   },
                   title: {
                     display: true,
-                    text: `Count of issues with ${numberField.label}`,
+                    text: `Count of ${targetTypeLabel} with ${numberField.label}`,
                   },
                 },
               }}
@@ -456,7 +467,7 @@ const View = (props) => {
                     position: "right",
                     title: {
                       display: true,
-                      text: "Count of issues",
+                      text: `Count of ${targetTypeLabel}`,
                       font: {
                         size: 12,
                       },
@@ -511,7 +522,7 @@ const View = (props) => {
                   },
                   title: {
                     display: true,
-                    text: `Count of issues with ${numberField.label}`,
+                    text: `Count of ${targetTypeLabel} with ${numberField.label}`,
                   },
                 },
               }}
@@ -561,7 +572,7 @@ const View = (props) => {
                     position: "right",
                     title: {
                       display: true,
-                      text: "Count of issues",
+                      text: `Count of ${targetTypeLabel}`,
                       font: {
                         size: 12,
                       },
@@ -604,7 +615,7 @@ const View = (props) => {
                   },
                   title: {
                     display: true,
-                    text: `Count of issues with ${numberField.label}`,
+                    text: `Count of ${targetTypeLabel} with ${numberField.label}`,
                   },
                 },
               }}
@@ -648,7 +659,7 @@ const View = (props) => {
                     position: "right",
                     title: {
                       display: true,
-                      text: "Count of issues",
+                      text: `Count of ${targetTypeLabel}`,
                       font: {
                         size: 12,
                       },

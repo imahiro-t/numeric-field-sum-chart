@@ -14,6 +14,7 @@ import {
   FIELD_NAME_PROJECT,
   FIELD_NAME_ISSUE_TYPE,
   FIELD_NAME_NUMBER_FIELD,
+  FIELD_NAME_CUSTOM_REPORT_TYPE_FIELD,
   FIELD_NAME_DATE_TIME_FIELD,
   FIELD_NAME_REPORT_MODE,
   FIELD_NAME_TARGET_TYPE,
@@ -28,6 +29,7 @@ const Edit = (props) => {
     project,
     issueType,
     numberField,
+    customReportTypeField,
     dateTimeField,
     reportMode,
     targetType,
@@ -39,12 +41,19 @@ const Edit = (props) => {
   const [projectResponseJson, setProjectResponseJson] = useState();
   const [issueTypeResponseJson, setIssueTypeResponseJson] = useState();
   const [numberFieldResponseJson, setNumberFieldResponseJson] = useState();
+  const [
+    customReportTypeFieldResponseJson,
+    setCustomReportTypeFieldResponseJson,
+  ] = useState();
   const [dateTimeFieldResponseJson, setDateTimeFieldResponseJson] = useState();
   const [selectedProject, setSelectedProject] = useState(project);
   const [selectedIssueType, setSelectedIssueType] = useState(issueType);
   const [selectedNumberField, setSelectedNumberField] = useState(numberField);
+  const [selectedCustomReportTypeField, setSelectedCustomReportTypeField] =
+    useState(customReportTypeField);
   const [selectedDateTimeField, setSelectedDateTimeField] =
     useState(dateTimeField);
+  const [selectedReportType, setSelectedReportType] = useState(reportType);
   const [selectedTermType, setSelectedTermType] = useState(termType);
 
   useEffect(() => {
@@ -55,6 +64,9 @@ const Edit = (props) => {
       );
     }
     invoke("getNumberFields", {}).then(setNumberFieldResponseJson);
+    invoke("getCustomReportTypeFields", {}).then(
+      setCustomReportTypeFieldResponseJson
+    );
     invoke("getDateTimeFields", {}).then(setDateTimeFieldResponseJson);
   }, []);
 
@@ -73,9 +85,15 @@ const Edit = (props) => {
       )
     : [];
   const numberFieldOptions = numberFieldResponseJson
-    ? numberFieldResponseJson.map((numericField) => ({
-        label: numericField.name,
-        value: numericField.id,
+    ? numberFieldResponseJson.map((numberField) => ({
+        label: numberField.name,
+        value: numberField.id,
+      }))
+    : [];
+  const customReportTypeFieldOptions = customReportTypeFieldResponseJson
+    ? customReportTypeFieldResponseJson.map((customReportTypeField) => ({
+        label: customReportTypeField.name,
+        value: customReportTypeField.id,
       }))
     : [];
   const dateTimeFieldOptions = dateTimeFieldResponseJson
@@ -92,6 +110,7 @@ const Edit = (props) => {
     { name: "reportType", value: REPORT_TYPE.MONTHLY, label: "Monthly" },
     { name: "reportType", value: REPORT_TYPE.WEEKLY, label: "Weekly" },
     { name: "reportType", value: REPORT_TYPE.SPRINT, label: "Sprint" },
+    { name: "reportType", value: REPORT_TYPE.CUSTOM, label: "Custom" },
   ];
   const reportModeOptions = [
     { name: "reportMode", value: REPORT_MODE.LINE, label: "Line Chart" },
@@ -147,8 +166,16 @@ const Edit = (props) => {
     setSelectedNumberField(data);
   };
 
+  const handleCustomReportTypeFieldChange = (data) => {
+    setSelectedCustomReportTypeField(data);
+  };
+
   const handleDateTimeFieldChange = (data) => {
     setSelectedDateTimeField(data);
+  };
+
+  const handleReportTypeChange = (data) => {
+    setSelectedReportType(data.target.value);
   };
 
   const handleTermTypeChange = (data) => {
@@ -165,8 +192,14 @@ const Edit = (props) => {
     if (!data[FIELD_NAME_NUMBER_FIELD]) {
       data[FIELD_NAME_NUMBER_FIELD] = selectedNumberField;
     }
+    if (!data[FIELD_NAME_CUSTOM_REPORT_TYPE_FIELD]) {
+      data[FIELD_NAME_CUSTOM_REPORT_TYPE_FIELD] = selectedCustomReportTypeField;
+    }
     if (!data[FIELD_NAME_DATE_TIME_FIELD]) {
       data[FIELD_NAME_DATE_TIME_FIELD] = selectedDateTimeField;
+    }
+    if (!data[FIELD_NAME_REPORT_TYPE]) {
+      data[FIELD_NAME_REPORT_TYPE] = selectedReportType;
     }
     if (!data[FIELD_NAME_TERM_TYPE]) {
       data[FIELD_NAME_TERM_TYPE] = selectedTermType;
@@ -204,17 +237,57 @@ const Edit = (props) => {
                 />
               )}
             </Field>
+            <Field name={FIELD_NAME_TARGET_TYPE} label="Target Type">
+              {({ fieldProps }) => (
+                <RadioGroup
+                  {...fieldProps}
+                  defaultValue={targetType}
+                  options={targetTypeOptions}
+                />
+              )}
+            </Field>
+          </Box>
+          <Box>
+            <Field name={FIELD_NAME_REPORT_TYPE} label="X-Axis">
+              {({ fieldProps }) => (
+                <RadioGroup
+                  {...fieldProps}
+                  defaultValue={reportType}
+                  options={reportTypeOptions}
+                  onChange={handleReportTypeChange}
+                />
+              )}
+            </Field>
             <Field
-              name={FIELD_NAME_NUMBER_FIELD}
-              label="Target Number Field"
-              isRequired
+              name={FIELD_NAME_CUSTOM_REPORT_TYPE_FIELD}
+              label="X-Axis Custom Field"
             >
+              {({ fieldProps }) => (
+                <Select
+                  {...fieldProps}
+                  defaultValue={customReportTypeField}
+                  options={customReportTypeFieldOptions}
+                  onChange={handleCustomReportTypeFieldChange}
+                  isDisabled={selectedReportType !== REPORT_TYPE.CUSTOM}
+                />
+              )}
+            </Field>
+            <Field name={FIELD_NAME_NUMBER_FIELD} label="Y-Axis" isRequired>
               {({ fieldProps }) => (
                 <Select
                   {...fieldProps}
                   defaultValue={numberField}
                   options={numberFieldOptions}
                   onChange={handleNumberFieldChange}
+                />
+              )}
+            </Field>
+            <Field name={FIELD_NAME_REPORT_MODE} label="Report Mode">
+              {({ fieldProps }) => (
+                <RadioGroup
+                  {...fieldProps}
+                  defaultValue={reportMode}
+                  options={reportModeOptions}
                 />
               )}
             </Field>
@@ -233,36 +306,7 @@ const Edit = (props) => {
                   onChange={handleDateTimeFieldChange}
                 />
               )}
-            </Field>
-            <Field name={FIELD_NAME_TARGET_TYPE} label="Target Type">
-              {({ fieldProps }) => (
-                <RadioGroup
-                  {...fieldProps}
-                  defaultValue={targetType}
-                  options={targetTypeOptions}
-                />
-              )}
-            </Field>
-            <Field name={FIELD_NAME_REPORT_TYPE} label="Report Type">
-              {({ fieldProps }) => (
-                <RadioGroup
-                  {...fieldProps}
-                  defaultValue={reportType}
-                  options={reportTypeOptions}
-                />
-              )}
-            </Field>
-            <Field name={FIELD_NAME_REPORT_MODE} label="Report Mode">
-              {({ fieldProps }) => (
-                <RadioGroup
-                  {...fieldProps}
-                  defaultValue={reportMode}
-                  options={reportModeOptions}
-                />
-              )}
-            </Field>
-          </Box>
-          <Box>
+            </Field>{" "}
             <Field name={FIELD_NAME_TERM_TYPE} label="Term Type">
               {({ fieldProps }) => (
                 <RadioGroup

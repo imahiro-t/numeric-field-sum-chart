@@ -18,6 +18,7 @@ import {
   FIELD_NAME_TERM_TYPE,
   FIELD_NAME_DATE_FROM,
   FIELD_NAME_DATE_TO,
+  FIELD_NAME_CUSTOM_REPORT_TYPE_FIELD,
 } from "./const";
 import { formatDate } from "./util";
 
@@ -52,6 +53,8 @@ const App = () => {
   const project = gadgetConfiguration[FIELD_NAME_PROJECT];
   const issueType = gadgetConfiguration[FIELD_NAME_ISSUE_TYPE];
   const numberField = gadgetConfiguration[FIELD_NAME_NUMBER_FIELD];
+  const customReportTypeField =
+    gadgetConfiguration[FIELD_NAME_CUSTOM_REPORT_TYPE_FIELD];
   const dateTimeField = gadgetConfiguration[FIELD_NAME_DATE_TIME_FIELD];
   const reportMode =
     gadgetConfiguration[FIELD_NAME_REPORT_MODE] ?? REPORT_MODE.LINE;
@@ -71,6 +74,7 @@ const App = () => {
       project={project}
       issueType={issueType}
       numberField={numberField}
+      customReportTypeField={customReportTypeField}
       dateTimeField={dateTimeField}
       reportMode={reportMode}
       targetType={targetType}
@@ -84,6 +88,7 @@ const App = () => {
       project={project}
       issueType={issueType}
       numberField={numberField}
+      customReportTypeField={customReportTypeField}
       dateTimeField={dateTimeField}
       reportMode={reportMode}
       targetType={targetType}
