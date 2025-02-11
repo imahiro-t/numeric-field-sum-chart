@@ -6,6 +6,7 @@ export const TARGET_TYPE = {
 export const REPORT_TYPE = {
   MONTHLY: "monthly",
   WEEKLY: "weekly",
+  DAILY: "daily",
   SPRINT: "sprint",
   CUSTOM: "custom",
 };

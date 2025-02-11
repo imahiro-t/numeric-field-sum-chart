@@ -110,6 +110,7 @@ const Edit = (props) => {
   const reportTypeOptions = [
     { name: "reportType", value: REPORT_TYPE.MONTHLY, label: "Monthly" },
     { name: "reportType", value: REPORT_TYPE.WEEKLY, label: "Weekly" },
+    { name: "reportType", value: REPORT_TYPE.DAILY, label: "Daily" },
     { name: "reportType", value: REPORT_TYPE.SPRINT, label: "Sprint" },
     { name: "reportType", value: REPORT_TYPE.CUSTOM, label: "Custom" },
   ];
@@ -269,7 +270,6 @@ const Edit = (props) => {
                   defaultValue={reportType}
                   options={reportTypeOptions}
                   onChange={handleReportTypeChange}
-                  isDisabled={selectedReportMode === REPORT_MODE.CFD}
                 />
               )}
             </Field>

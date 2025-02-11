@@ -110,9 +110,9 @@ resolver.define("searchIssues", async (req) => {
     let condition = "";
     issueTypes.forEach((issueType, index) => {
       if (index === 0) {
-        condition = `and (issueType = ${issueType}`;
+        condition = `and (issueType = '${issueType}'`;
       } else {
-        condition = `${condition} or issueType = ${issueType}`;
+        condition = `${condition} or issueType = '${issueType}'`;
       }
     });
     condition = `${condition})`;
@@ -157,27 +157,31 @@ resolver.define("searchIssues", async (req) => {
 
   const extractLastNumber = (str) => {
     const match = str.match(/\d+$/);
-    return match ? match[0] : null;
+    return match ? Number(match[0]) : null;
   };
 
   issues.forEach((issue) => {
     if (issue.fields[sprintField]) {
-      issue.fields[sprintField] = Math.max(
+      const latestSprintNumber = Math.max(
         ...issue.fields[sprintField]
           .map((sprint) => sprint.name)
           .map(extractLastNumber)
       );
+      const latestSprint = issue.fields[sprintField].find(
+        (sprint) => extractLastNumber(sprint.name) == latestSprintNumber
+      );
+      issue.fields["sprintNumber"] = latestSprintNumber;
+      issue.fields["sprint"] = latestSprint;
     }
   });
 
   return isCumulative
-    ? createCumulativeResponseValue(issues, dateFrom, dateTo)
+    ? createCumulativeResponseValue(issues, reportType, dateFrom, dateTo)
     : createResponseValue(
         issues,
         numberField,
         customReportTypeField,
         dateTimeField,
-        sprintField,
         reportType,
         targetType,
         dateFrom,
@@ -221,19 +225,72 @@ const searchIssuesRecursive = async (body, startAt, acc) => {
 
 const unique = (value, index, array) => array.indexOf(value) === index;
 
-const createCumulativeResponseValue = (issues, dateFrom, dateTo) => {
+const createCumulativeResponseValue = (
+  issues,
+  reportType,
+  dateFrom,
+  dateTo
+) => {
   const targetValues = ["DONE", "TODO / DOING"];
-  const store = initCumulativeStore(
-    targetValues,
-    new Date(dateFrom),
-    new Date(dateTo)
+  const minSprint = Math.min(
+    ...issues
+      .filter((issue) => issue.fields["sprintNumber"])
+      .map((issue) => issue.fields["sprintNumber"] ?? 0)
   );
-  const targetDates = dailyTargetDates(new Date(dateFrom), new Date(dateTo));
+  const maxSprint = Math.max(
+    ...issues
+      .filter((issue) => issue.fields["sprintNumber"])
+      .map((issue) => issue.fields["sprintNumber"] ?? 0)
+  );
+  const sprintMap = {};
+  const sprintDateMap = {};
+  issues.forEach((issue) => {
+    if (issue.fields["sprintNumber"]) {
+      sprintMap[issue.fields["sprintNumber"]] =
+        issue.fields["sprint"]?.startDate;
+      sprintDateMap[new Date(issue.fields["sprint"]?.startDate).getTime()] =
+        issue.fields["sprintNumber"];
+    }
+  });
+  const store =
+    reportType === REPORT_TYPE.MONTHLY
+      ? initMonthlyStore(targetValues, new Date(dateFrom), new Date(dateTo))
+      : reportType === REPORT_TYPE.WEEKLY
+      ? initWeeklyStore(targetValues, new Date(dateFrom), new Date(dateTo))
+      : reportType === REPORT_TYPE.DAILY
+      ? initDailyStore(targetValues, new Date(dateFrom), new Date(dateTo))
+      : reportType === REPORT_TYPE.SPRINT
+      ? initSprintStore(targetValues, minSprint, maxSprint)
+      : initMonthlyStore(targetValues, new Date(dateFrom), new Date(dateTo));
+  const targetDates =
+    reportType === REPORT_TYPE.MONTHLY
+      ? monthlyTargetDates(new Date(dateFrom), new Date(dateTo))
+      : reportType === REPORT_TYPE.WEEKLY
+      ? weeklyTargetDates(new Date(dateFrom), new Date(dateTo))
+      : reportType === REPORT_TYPE.DAILY
+      ? dailyTargetDates(new Date(dateFrom), new Date(dateTo))
+      : reportType === REPORT_TYPE.SPRINT
+      ? sprintTargetDates(sprintMap, minSprint, maxSprint)
+      : monthlyTargetDates(new Date(dateFrom), new Date(dateTo));
   for (let i = 0; i < targetDates.length - 1; i++) {
     issues.forEach((issue) => {
       const date = targetDates[i + 1].getTime();
-      const term = createDailyTermKey(new Date(date));
-      if (targetDates[i].getTime() > new Date(issue.fields.created).getTime()) {
+      const sprint = sprintDateMap[targetDates[i + 1].getTime()];
+      const term =
+        reportType === REPORT_TYPE.MONTHLY
+          ? createMonthlyTermKey(new Date(date))
+          : reportType === REPORT_TYPE.WEEKLY
+          ? createWeeklyTermKey(new Date(date))
+          : reportType === REPORT_TYPE.DAILY
+          ? createDailyTermKey(new Date(date))
+          : reportType === REPORT_TYPE.SPRINT
+          ? `Sprint ${sprint}`
+          : createMonthlyTermKey(new Date(date));
+      if (
+        store[`${term}-DONE`] &&
+        store[`${term}-TODO / DOING`] &&
+        targetDates[i].getTime() > new Date(issue.fields.created).getTime()
+      ) {
         if (
           issue.fields.resolutiondate &&
           targetDates[i].getTime() >
@@ -257,7 +314,6 @@ const createResponseValue = (
   numberField,
   customReportTypeField,
   dateTimeField,
-  sprintField,
   reportType,
   targetType,
   dateFrom,
@@ -269,13 +325,13 @@ const createResponseValue = (
       : issueTypes(issues);
   const minSprint = Math.min(
     ...issues
-      .filter((issue) => issue.fields[sprintField])
-      .map((issue) => issue.fields[sprintField] ?? 0)
+      .filter((issue) => issue.fields["sprintNumber"])
+      .map((issue) => issue.fields["sprintNumber"] ?? 0)
   );
   const maxSprint = Math.max(
     ...issues
-      .filter((issue) => issue.fields[sprintField])
-      .map((issue) => issue.fields[sprintField] ?? 0)
+      .filter((issue) => issue.fields["sprintNumber"])
+      .map((issue) => issue.fields["sprintNumber"] ?? 0)
   );
   const customReportTypeOptions =
     reportType === REPORT_TYPE.CUSTOM &&
@@ -289,27 +345,31 @@ const createResponseValue = (
       .filter((value) => value !== undefined)
       .filter(unique);
   const store =
-    reportType === REPORT_TYPE.WEEKLY
-      ? initWeeklyStore(targetValues, new Date(dateFrom), new Date(dateTo))
-      : reportType === REPORT_TYPE.MONTHLY
+    reportType === REPORT_TYPE.MONTHLY
       ? initMonthlyStore(targetValues, new Date(dateFrom), new Date(dateTo))
+      : reportType === REPORT_TYPE.WEEKLY
+      ? initWeeklyStore(targetValues, new Date(dateFrom), new Date(dateTo))
+      : reportType === REPORT_TYPE.DAILY
+      ? initDailyStore(targetValues, new Date(dateFrom), new Date(dateTo))
       : reportType === REPORT_TYPE.SPRINT
       ? initSprintStore(targetValues, minSprint, maxSprint)
       : initCustomFieldStore(targetValues, customReportTypeOptions);
   issues.forEach((issue) => {
     const value = issue.fields[numberField];
     const date = issue.fields[dateTimeField];
-    const sprint = issue.fields[sprintField];
+    const sprint = issue.fields["sprintNumber"];
     const customFieldValue = Number.isFinite(
       issue.fields[customReportTypeField]
     )
       ? issue.fields[customReportTypeField]
       : issue.fields[customReportTypeField]?.value;
     const term =
-      reportType === REPORT_TYPE.WEEKLY
-        ? createWeeklyTermKey(new Date(date))
-        : reportType === REPORT_TYPE.MONTHLY
+      reportType === REPORT_TYPE.MONTHLY
         ? createMonthlyTermKey(new Date(date))
+        : reportType === REPORT_TYPE.WEEKLY
+        ? createWeeklyTermKey(new Date(date))
+        : reportType === REPORT_TYPE.DAILY
+        ? createDailyTermKey(new Date(date))
         : reportType === REPORT_TYPE.SPRINT
         ? `Sprint ${sprint}`
         : customFieldValue;
@@ -422,9 +482,31 @@ const initWeeklyStore = (targetValues, dateFrom, dateTo) => {
   return store;
 };
 
+const initDailyStore = (targetValues, dateFrom, dateTo) => {
+  const store = {};
+  dateFrom.setHours(0, 0, 0, 0);
+  dateTo.setHours(0, 0, 0, 0);
+  dateFrom.setDate(dateFrom.getDate());
+  while (dateTo >= dateFrom) {
+    const term = createDailyTermKey(dateTo);
+    targetValues.forEach((targetValue) => {
+      const key = `${term}-${targetValue}`;
+      store[key] = {
+        term: term,
+        order: Number(term.replaceAll("-", "")),
+        count: 0,
+        sum: 0,
+        target: targetValue,
+      };
+    });
+    dateTo.setDate(dateTo.getDate() - 1);
+  }
+  return store;
+};
+
 const initSprintStore = (targetValues, minSprint, maxSprint) => {
   const store = {};
-  for (let sprint = minSprint; sprint <= maxSprint; sprint++) {
+  for (let sprint = maxSprint; sprint >= minSprint; sprint--) {
     targetValues.forEach((targetValue) => {
       const term = `Sprint ${sprint}`;
       const key = `${term}-${targetValue}`;
@@ -458,26 +540,32 @@ const initCustomFieldStore = (targetValues, customReportTypeOptions) => {
   return store;
 };
 
-const initCumulativeStore = (targetValues, dateFrom, dateTo) => {
-  const store = {};
+const monthlyTargetDates = (dateFrom, dateTo) => {
+  let targets = [];
   dateFrom.setHours(0, 0, 0, 0);
   dateTo.setHours(0, 0, 0, 0);
-  dateFrom.setDate(dateFrom.getDate());
+  dateFrom.setDate(1);
+  dateTo.setDate(1);
+  dateTo.setMonth(dateTo.getMonth() + 1);
   while (dateTo >= dateFrom) {
-    const term = createDailyTermKey(dateTo);
-    targetValues.forEach((targetValue) => {
-      const key = `${term}-${targetValue}`;
-      store[key] = {
-        term: term,
-        order: Number(term.replaceAll("-", "")),
-        count: 0,
-        sum: 0,
-        target: targetValue,
-      };
-    });
-    dateTo.setDate(dateTo.getDate() - 1);
+    targets.push(new Date(dateTo.getTime()));
+    dateTo.setMonth(dateTo.getMonth() - 1);
   }
-  return store;
+  return targets;
+};
+
+const weeklyTargetDates = (dateFrom, dateTo) => {
+  let targets = [];
+  dateFrom.setHours(0, 0, 0, 0);
+  dateTo.setHours(0, 0, 0, 0);
+  dateFrom.setDate(dateFrom.getDate() - 6);
+  dateTo.setDate(dateTo.getDate() + 7);
+  while (dateTo >= dateFrom) {
+    const term = createWeeklyTermKey(dateTo);
+    targets.push(new Date(term));
+    dateTo.setDate(dateTo.getDate() - 7);
+  }
+  return targets;
 };
 
 const dailyTargetDates = (dateFrom, dateTo) => {
@@ -488,6 +576,17 @@ const dailyTargetDates = (dateFrom, dateTo) => {
   while (dateTo >= dateFrom) {
     targets.push(new Date(dateTo.getTime()));
     dateTo.setDate(dateTo.getDate() - 1);
+  }
+  return targets;
+};
+
+const sprintTargetDates = (sprintMap, minSprint, maxSprint) => {
+  let targets = [new Date()];
+  for (let sprint = maxSprint; sprint >= minSprint; sprint--) {
+    const date = sprintMap[sprint];
+    if (date) {
+      targets.push(new Date(date));
+    }
   }
   return targets;
 };
