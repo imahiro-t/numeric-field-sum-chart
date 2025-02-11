@@ -11,6 +11,10 @@ Sum up any numeric value like story points in project and output monthly or week
 
 ## Release Notes
 
+### 0.0.10
+
+- ✨ Add feature to show cumulative flow diagram
+
 ### 0.0.9
 
 - ✨ Add feature to set custom field for x-axis
