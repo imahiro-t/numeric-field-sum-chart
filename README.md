@@ -11,6 +11,10 @@ Sum up any numeric value like story points in project and output monthly or week
 
 ## Release Notes
 
+### 0.0.11
+
+- ✨ Add feature to select report type for CFD
+
 ### 0.0.10
 
 - ✨ Add feature to show cumulative flow diagram
