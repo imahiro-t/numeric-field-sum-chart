@@ -96,6 +96,7 @@ resolver.define("searchIssues", async (req) => {
     targetType,
     dateFromStr,
     dateToStr,
+    isCumulative,
   } = req.payload;
 
   const sprintField = await getSprintFieldId();
@@ -109,7 +110,7 @@ resolver.define("searchIssues", async (req) => {
     let condition = "";
     issueTypes.forEach((issueType, index) => {
       if (index === 0) {
-        condition = `(issueType = ${issueType}`;
+        condition = `and (issueType = ${issueType}`;
       } else {
         condition = `${condition} or issueType = ${issueType}`;
       }
@@ -118,27 +119,30 @@ resolver.define("searchIssues", async (req) => {
     return condition;
   };
 
-  const jql =
-    issueType.length > 0
-      ? `project = ${project} and ${issueTypesCondition(
-          issueType
-        )} and ${clauseName(numberField)} >= 0 and ${clauseName(
-          dateTimeField
-        )} >= ${createTermCondition(dateFrom)} and ${clauseName(
-          dateTimeField
-        )} < ${createTermCondition(dateToForQuery)} order by ${clauseName(
-          dateTimeField
-        )} DESC`
-      : `project = ${project} and ${clauseName(
-          numberField
-        )} >= 0 and ${clauseName(dateTimeField)} >= ${createTermCondition(
-          dateFrom
-        )} and ${clauseName(dateTimeField)} < ${createTermCondition(
-          dateToForQuery
-        )} order by ${clauseName(dateTimeField)} DESC`;
+  const jql = isCumulative
+    ? `project = ${project} ${issueTypesCondition(
+        issueType
+      )} and ((resolutiondate >= ${createTermCondition(
+        dateFrom
+      )} and resolutiondate < ${createTermCondition(
+        dateToForQuery
+      )} and statusCategory = Done) or statusCategory != Done) order by created DESC`
+    : `project = ${project} ${issueTypesCondition(issueType)} and ${clauseName(
+        numberField
+      )} >= 0 and ${clauseName(dateTimeField)} >= ${createTermCondition(
+        dateFrom
+      )} and ${clauseName(dateTimeField)} < ${createTermCondition(
+        dateToForQuery
+      )} order by ${clauseName(dateTimeField)} DESC`;
 
   const body = {
-    fields: [numberField, dateTimeField, sprintField]
+    fields: [
+      numberField,
+      dateTimeField,
+      sprintField,
+      "created",
+      "resolutiondate",
+    ]
       .concat(
         targetType === TARGET_TYPE.ASSIGNEE ? ["assignee"] : ["issuetype"]
       )
@@ -166,17 +170,19 @@ resolver.define("searchIssues", async (req) => {
     }
   });
 
-  return createResponseValue(
-    issues,
-    numberField,
-    customReportTypeField,
-    dateTimeField,
-    sprintField,
-    reportType,
-    targetType,
-    dateFrom,
-    dateTo
-  );
+  return isCumulative
+    ? createCumulativeResponseValue(issues, dateFrom, dateTo)
+    : createResponseValue(
+        issues,
+        numberField,
+        customReportTypeField,
+        dateTimeField,
+        sprintField,
+        reportType,
+        targetType,
+        dateFrom,
+        dateTo
+      );
 });
 
 const getSprintFieldId = async () => {
@@ -214,6 +220,37 @@ const searchIssuesRecursive = async (body, startAt, acc) => {
 };
 
 const unique = (value, index, array) => array.indexOf(value) === index;
+
+const createCumulativeResponseValue = (issues, dateFrom, dateTo) => {
+  const targetValues = ["DONE", "TODO / DOING"];
+  const store = initCumulativeStore(
+    targetValues,
+    new Date(dateFrom),
+    new Date(dateTo)
+  );
+  const targetDates = dailyTargetDates(new Date(dateFrom), new Date(dateTo));
+  for (let i = 0; i < targetDates.length - 1; i++) {
+    issues.forEach((issue) => {
+      const date = targetDates[i + 1].getTime();
+      const term = createDailyTermKey(new Date(date));
+      if (targetDates[i].getTime() > new Date(issue.fields.created).getTime()) {
+        if (
+          issue.fields.resolutiondate &&
+          targetDates[i].getTime() >
+            new Date(issue.fields.resolutiondate).getTime()
+        ) {
+          store[`${term}-DONE`].count++;
+        } else {
+          store[`${term}-TODO / DOING`].count++;
+        }
+      }
+    });
+  }
+  return Object.keys(store)
+    .sort()
+    .map((key) => store[key])
+    .sort((a, b) => Number(a.order) - Number(b.order));
+};
 
 const createResponseValue = (
   issues,
@@ -335,6 +372,13 @@ const createWeeklyTermKey = (date) => {
   return `${year}-${month}-${day}`;
 };
 
+const createDailyTermKey = (date) => {
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const day = date.getDate().toString().padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 const initMonthlyStore = (targetValues, dateFrom, dateTo) => {
   const store = {};
   dateFrom.setHours(0, 0, 0, 0);
@@ -380,7 +424,7 @@ const initWeeklyStore = (targetValues, dateFrom, dateTo) => {
 
 const initSprintStore = (targetValues, minSprint, maxSprint) => {
   const store = {};
-  for (var sprint = minSprint; sprint <= maxSprint; sprint++) {
+  for (let sprint = minSprint; sprint <= maxSprint; sprint++) {
     targetValues.forEach((targetValue) => {
       const term = `Sprint ${sprint}`;
       const key = `${term}-${targetValue}`;
@@ -412,6 +456,40 @@ const initCustomFieldStore = (targetValues, customReportTypeOptions) => {
     });
   });
   return store;
+};
+
+const initCumulativeStore = (targetValues, dateFrom, dateTo) => {
+  const store = {};
+  dateFrom.setHours(0, 0, 0, 0);
+  dateTo.setHours(0, 0, 0, 0);
+  dateFrom.setDate(dateFrom.getDate());
+  while (dateTo >= dateFrom) {
+    const term = createDailyTermKey(dateTo);
+    targetValues.forEach((targetValue) => {
+      const key = `${term}-${targetValue}`;
+      store[key] = {
+        term: term,
+        order: Number(term.replaceAll("-", "")),
+        count: 0,
+        sum: 0,
+        target: targetValue,
+      };
+    });
+    dateTo.setDate(dateTo.getDate() - 1);
+  }
+  return store;
+};
+
+const dailyTargetDates = (dateFrom, dateTo) => {
+  let targets = [];
+  dateFrom.setHours(0, 0, 0, 0);
+  dateTo.setHours(0, 0, 0, 0);
+  dateTo.setDate(dateTo.getDate() + 1);
+  while (dateTo >= dateFrom) {
+    targets.push(new Date(dateTo.getTime()));
+    dateTo.setDate(dateTo.getDate() - 1);
+  }
+  return targets;
 };
 
 export const handler = resolver.getDefinitions();

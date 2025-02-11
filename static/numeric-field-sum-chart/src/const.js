@@ -8,6 +8,7 @@ export const REPORT_MODE = {
   PIE: "pie",
   DOUGHNUT: "doughnut",
   TABLE: "table",
+  CFD: "cfd",
 };
 
 export const TARGET_TYPE = {

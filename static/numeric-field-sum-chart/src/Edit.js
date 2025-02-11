@@ -54,6 +54,7 @@ const Edit = (props) => {
   const [selectedDateTimeField, setSelectedDateTimeField] =
     useState(dateTimeField);
   const [selectedReportType, setSelectedReportType] = useState(reportType);
+  const [selectedReportMode, setSelectedReportMode] = useState(reportMode);
   const [selectedTermType, setSelectedTermType] = useState(termType);
 
   useEffect(() => {
@@ -142,6 +143,11 @@ const Edit = (props) => {
       label: "Doughnut Chart",
     },
     { name: "reportMode", value: REPORT_MODE.TABLE, label: "Table" },
+    {
+      name: "reportMode",
+      value: REPORT_MODE.CFD,
+      label: "Cumulative Flow Diagram (CFD)",
+    },
   ];
   const termTypeOptions = [
     { name: "termType", value: TERM_TYPE.PAST_YEAR, label: "Past a Year" },
@@ -178,6 +184,10 @@ const Edit = (props) => {
     setSelectedReportType(data.target.value);
   };
 
+  const handleReportModeChange = (data) => {
+    setSelectedReportMode(data.target.value);
+  };
+
   const handleTermTypeChange = (data) => {
     setSelectedTermType(data.target.value);
   };
@@ -200,6 +210,9 @@ const Edit = (props) => {
     }
     if (!data[FIELD_NAME_REPORT_TYPE]) {
       data[FIELD_NAME_REPORT_TYPE] = selectedReportType;
+    }
+    if (!data[FIELD_NAME_REPORT_MODE]) {
+      data[FIELD_NAME_REPORT_MODE] = selectedReportMode;
     }
     if (!data[FIELD_NAME_TERM_TYPE]) {
       data[FIELD_NAME_TERM_TYPE] = selectedTermType;
@@ -243,6 +256,7 @@ const Edit = (props) => {
                   {...fieldProps}
                   defaultValue={targetType}
                   options={targetTypeOptions}
+                  isDisabled={selectedReportMode === REPORT_MODE.CFD}
                 />
               )}
             </Field>
@@ -255,6 +269,7 @@ const Edit = (props) => {
                   defaultValue={reportType}
                   options={reportTypeOptions}
                   onChange={handleReportTypeChange}
+                  isDisabled={selectedReportMode === REPORT_MODE.CFD}
                 />
               )}
             </Field>
@@ -268,7 +283,10 @@ const Edit = (props) => {
                   defaultValue={customReportTypeField}
                   options={customReportTypeFieldOptions}
                   onChange={handleCustomReportTypeFieldChange}
-                  isDisabled={selectedReportType !== REPORT_TYPE.CUSTOM}
+                  isDisabled={
+                    selectedReportType !== REPORT_TYPE.CUSTOM ||
+                    selectedReportMode === REPORT_MODE.CFD
+                  }
                 />
               )}
             </Field>
@@ -279,6 +297,7 @@ const Edit = (props) => {
                   defaultValue={numberField}
                   options={numberFieldOptions}
                   onChange={handleNumberFieldChange}
+                  isDisabled={selectedReportMode === REPORT_MODE.CFD}
                 />
               )}
             </Field>
@@ -288,6 +307,7 @@ const Edit = (props) => {
                   {...fieldProps}
                   defaultValue={reportMode}
                   options={reportModeOptions}
+                  onChange={handleReportModeChange}
                 />
               )}
             </Field>
@@ -304,6 +324,7 @@ const Edit = (props) => {
                   defaultValue={dateTimeField}
                   options={dateTimeFieldOptions}
                   onChange={handleDateTimeFieldChange}
+                  isDisabled={selectedReportMode === REPORT_MODE.CFD}
                 />
               )}
             </Field>{" "}
@@ -355,8 +376,8 @@ const Edit = (props) => {
                   !(
                     selectedProject &&
                     selectedIssueType &&
-                    selectedNumberField &&
-                    selectedDateTimeField
+                    (selectedReportMode === REPORT_MODE.CFD ||
+                      (selectedNumberField && selectedDateTimeField))
                   )
                 }
               >

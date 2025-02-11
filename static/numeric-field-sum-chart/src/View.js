@@ -85,15 +85,19 @@ const View = (props) => {
   }
 
   useEffect(() => {
-    if (project && issueType && numberField && dateTimeField) {
+    if (
+      project &&
+      issueType &&
+      (reportMode === REPORT_MODE.CFD || (numberField && dateTimeField))
+    ) {
       invoke("searchIssues", {
         project: project.value,
         issueType: Array.isArray(issueType)
           ? issueType.filter((x) => x.value.length > 0).map((x) => x.value)
           : [issueType.value],
-        numberField: numberField.value,
+        numberField: numberField?.value,
         customReportTypeField: customReportTypeField?.value,
-        dateTimeField: dateTimeField.value,
+        dateTimeField: dateTimeField?.value,
         targetType: targetType,
         reportType: reportType,
         dateFromStr:
@@ -116,6 +120,7 @@ const View = (props) => {
             : termType === TERM_TYPE.PAST_6_MONTH
             ? formatDate(currentDate)
             : dateTo,
+        isCumulative: reportMode === REPORT_MODE.CFD,
       }).then(setIssueResponseJson);
     }
   }, []);
@@ -220,6 +225,25 @@ const View = (props) => {
       data: valueMap[target],
       borderColor: countColors[index % 7],
       backgroundColor: countColors[index % 7],
+    }));
+    return {
+      labels: labels,
+      datasets: datasets,
+    };
+  };
+
+  const createDataForCFD = (values) => {
+    const labels = createLabels(values);
+    const valueMap = values.reduce(
+      (acc, value) => createMap(value.target, value.count, acc),
+      {}
+    );
+    const datasets = ["DONE", "TODO / DOING"].map((target, index) => ({
+      label: target,
+      data: valueMap[target],
+      borderColor: countColors[index % 7],
+      backgroundColor: countColors[index % 7],
+      fill: index === 0 ? "origin" : "-1",
     }));
     return {
       labels: labels,
@@ -680,6 +704,31 @@ const View = (props) => {
               head={head}
               rows={createRows(issueResponseJson)}
               rowsPerPage={30}
+            />
+          </Box>
+        </>
+      )}
+      {reportMode === REPORT_MODE.CFD && (
+        <>
+          <Box>
+            <Line
+              options={{
+                responsive: true,
+                y: {
+                  stacked: true,
+                  min: 0,
+                },
+                plugins: {
+                  legend: {
+                    position: "bottom",
+                  },
+                  title: {
+                    display: true,
+                    text: `Cumulative Flow Diagram`,
+                  },
+                },
+              }}
+              data={createDataForCFD(issueResponseJson)}
             />
           </Box>
         </>
