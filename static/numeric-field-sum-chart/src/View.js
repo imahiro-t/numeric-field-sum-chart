@@ -151,6 +151,13 @@ const View = (props) => {
     "rgba(153, 102, 255, 0.6)", // Purple
     "rgba(255, 159, 64, 0.6)", // Orange
     "rgba(201, 203, 207, 0.6)", // Gray
+    "rgba(179, 157, 219, 0.6)", // Light Purple (薄紫)
+    "rgba(174, 213, 129, 0.6)", // Light Green (黄緑)
+    "rgba(144, 202, 249, 0.6)", // Light Blue (水色)
+    "rgba(248, 187, 208, 0.6)", // Light Pink (ピンク)
+    "rgba(161, 136, 127, 0.6)", // Brown (茶色)
+    "rgba(238, 224, 204, 0.6)", // Beige (黄土色)
+    "rgba(38, 70, 83, 0.6)", // Dark Green (深緑)
   ];
 
   const countColors = [
@@ -161,6 +168,13 @@ const View = (props) => {
     "rgba(153, 102, 255, 0.3)", // Purple
     "rgba(255, 159, 64, 0.3)", // Orange
     "rgba(201, 203, 207, 0.3)", // Gray
+    "rgba(179, 157, 219, 0.3)", // Light Purple (薄紫)
+    "rgba(174, 213, 129, 0.3)", // Light Green (黄緑)
+    "rgba(144, 202, 249, 0.3)", // Light Blue (水色)
+    "rgba(248, 187, 208, 0.3)", // Light Pink (ピンク)
+    "rgba(161, 136, 127, 0.3)", // Brown (茶色)
+    "rgba(238, 224, 204, 0.3)", // Beige (黄土色)
+    "rgba(38, 70, 83, 0.3)", // Dark Green (深緑)
   ];
 
   const createDataForSumWithCount = (values, secondType) => {
