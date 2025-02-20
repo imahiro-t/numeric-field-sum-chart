@@ -252,14 +252,19 @@ const View = (props) => {
   };
 
   const createDataForPieSum = (values) => {
-    const term =
-      values.length > 0 ? values.sort((a, b) => b.order - a.order)[0].term : "";
-    const labels = values
-      .filter((value) => value.term === term)
-      .map((value) => value.target);
-    const datasets = values
-      .filter((value) => value.term === term)
-      .map((value) => value.sum);
+    const mergedValuesMap = {};
+    values.forEach((value) => {
+      mergedValuesMap[value.target] = {
+        target: value.target,
+        count: value.count + (mergedValuesMap[value.target]?.count ?? 0),
+        sum: value.sum + (mergedValuesMap[value.target]?.sum ?? 0),
+      };
+    });
+    const mergedValues = Object.keys(mergedValuesMap).map(
+      (key) => mergedValuesMap[key]
+    );
+    const labels = mergedValues.map((value) => value.target);
+    const datasets = mergedValues.map((value) => value.sum);
     return {
       labels: labels,
       datasets: [
@@ -273,14 +278,19 @@ const View = (props) => {
   };
 
   const createDataForPieCount = (values) => {
-    const term =
-      values.length > 0 ? values.sort((a, b) => b.order - a.order)[0].term : "";
-    const labels = values
-      .filter((value) => value.term === term)
-      .map((value) => value.target);
-    const datasets = values
-      .filter((value) => value.term === term)
-      .map((value) => value.count);
+    const mergedValuesMap = {};
+    values.forEach((value) => {
+      mergedValuesMap[value.target] = {
+        target: value.target,
+        count: value.count + (mergedValuesMap[value.target]?.count ?? 0),
+        sum: value.sum + (mergedValuesMap[value.target]?.sum ?? 0),
+      };
+    });
+    const mergedValues = Object.keys(mergedValuesMap).map(
+      (key) => mergedValuesMap[key]
+    );
+    const labels = mergedValues.map((value) => value.target);
+    const datasets = mergedValues.map((value) => value.count);
     return {
       labels: labels,
       datasets: [
