@@ -235,6 +235,12 @@ const createCumulativeResponseValue = (
   const minSprint = Math.min(
     ...issues
       .filter((issue) => issue.fields["sprintNumber"])
+      .filter(
+        (issue) =>
+          issue.fields.sprint?.endDate &&
+          new Date(issue.fields.sprint?.endDate).getTime() >
+            new Date(dateFrom).getTime()
+      )
       .map((issue) => issue.fields["sprintNumber"] ?? 0)
   );
   const maxSprint = Math.max(
