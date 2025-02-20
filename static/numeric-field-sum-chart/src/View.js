@@ -95,7 +95,7 @@ const View = (props) => {
         issueType: Array.isArray(issueType)
           ? issueType.filter((x) => x.value.length > 0).map((x) => x.value)
           : [issueType.value],
-        numberField: numberField?.value,
+        numberField: numberField?.value ?? "",
         customReportTypeField: customReportTypeField?.value,
         dateTimeField: dateTimeField?.value,
         targetType: targetType,
@@ -360,26 +360,31 @@ const View = (props) => {
                   },
                   title: {
                     display: true,
-                    text: `Sum of ${numberField.label}`,
+                    text:
+                      (numberField?.value ?? "").length > 0
+                        ? `Sum of ${numberField.label}`
+                        : `Count of ${targetTypeLabel}`,
                   },
                 },
               }}
               data={createDataForPieSum(issueResponseJson)}
             />
-            <Pie
-              options={{
-                plugins: {
-                  legend: {
-                    position: "bottom",
+            {(numberField?.value ?? "").length > 0 && (
+              <Pie
+                options={{
+                  plugins: {
+                    legend: {
+                      position: "bottom",
+                    },
+                    title: {
+                      display: true,
+                      text: `Count of ${targetTypeLabel} with ${numberField.label}`,
+                    },
                   },
-                  title: {
-                    display: true,
-                    text: `Count of ${targetTypeLabel} with ${numberField.label}`,
-                  },
-                },
-              }}
-              data={createDataForPieCount(issueResponseJson)}
-            />
+                }}
+                data={createDataForPieCount(issueResponseJson)}
+              />
+            )}
           </Box>
         </>
       )}
@@ -394,26 +399,31 @@ const View = (props) => {
                   },
                   title: {
                     display: true,
-                    text: `Sum of ${numberField.label}`,
+                    text:
+                      (numberField?.value ?? "").length > 0
+                        ? `Sum of ${numberField.label}`
+                        : `Count of ${targetTypeLabel}`,
                   },
                 },
               }}
               data={createDataForPieSum(issueResponseJson)}
             />
-            <Doughnut
-              options={{
-                plugins: {
-                  legend: {
-                    position: "bottom",
+            {(numberField?.value ?? "").length > 0 && (
+              <Doughnut
+                options={{
+                  plugins: {
+                    legend: {
+                      position: "bottom",
+                    },
+                    title: {
+                      display: true,
+                      text: `Count of ${targetTypeLabel} with ${numberField.label}`,
+                    },
                   },
-                  title: {
-                    display: true,
-                    text: `Count of ${targetTypeLabel} with ${numberField.label}`,
-                  },
-                },
-              }}
-              data={createDataForPieCount(issueResponseJson)}
-            />
+                }}
+                data={createDataForPieCount(issueResponseJson)}
+              />
+            )}
           </Box>
         </>
       )}
@@ -429,31 +439,38 @@ const View = (props) => {
                   },
                   title: {
                     display: true,
-                    text: `Sum of ${numberField.label}`,
+                    text:
+                      (numberField?.value ?? "").length > 0
+                        ? `Sum of ${numberField.label}`
+                        : `Count of ${targetTypeLabel}`,
                   },
                 },
               }}
               data={createDataForSum(issueResponseJson)}
             />
           </Box>
-          <Box padding="space.100" />
-          <Box>
-            <Bar
-              options={{
-                responsive: true,
-                plugins: {
-                  legend: {
-                    position: "bottom",
-                  },
-                  title: {
-                    display: true,
-                    text: `Count of ${targetTypeLabel} with ${numberField.label}`,
-                  },
-                },
-              }}
-              data={createDataForCount(issueResponseJson)}
-            />
-          </Box>
+          {(numberField?.value ?? "").length > 0 && (
+            <>
+              <Box padding="space.100" />
+              <Box>
+                <Bar
+                  options={{
+                    responsive: true,
+                    plugins: {
+                      legend: {
+                        position: "bottom",
+                      },
+                      title: {
+                        display: true,
+                        text: `Count of ${targetTypeLabel} with ${numberField.label}`,
+                      },
+                    },
+                  }}
+                  data={createDataForCount(issueResponseJson)}
+                />
+              </Box>
+            </>
+          )}
         </>
       )}
       {reportMode === REPORT_MODE.BAR_WITH_LINE && (
@@ -522,37 +539,44 @@ const View = (props) => {
                   },
                   title: {
                     display: true,
-                    text: `Sum of ${numberField.label}`,
+                    text:
+                      (numberField?.value ?? "").length > 0
+                        ? `Sum of ${numberField.label}`
+                        : `Count of ${targetTypeLabel}`,
                   },
                 },
               }}
               data={createDataForSum(issueResponseJson)}
             />
           </Box>
-          <Box padding="space.100" />
-          <Box>
-            <Bar
-              options={{
-                responsive: true,
-                x: {
-                  stacked: true,
-                },
-                y: {
-                  stacked: true,
-                },
-                plugins: {
-                  legend: {
-                    position: "bottom",
-                  },
-                  title: {
-                    display: true,
-                    text: `Count of ${targetTypeLabel} with ${numberField.label}`,
-                  },
-                },
-              }}
-              data={createDataForCount(issueResponseJson)}
-            />
-          </Box>
+          {(numberField?.value ?? "").length > 0 && (
+            <>
+              <Box padding="space.100" />
+              <Box>
+                <Bar
+                  options={{
+                    responsive: true,
+                    x: {
+                      stacked: true,
+                    },
+                    y: {
+                      stacked: true,
+                    },
+                    plugins: {
+                      legend: {
+                        position: "bottom",
+                      },
+                      title: {
+                        display: true,
+                        text: `Count of ${targetTypeLabel} with ${numberField.label}`,
+                      },
+                    },
+                  }}
+                  data={createDataForCount(issueResponseJson)}
+                />
+              </Box>
+            </>
+          )}
         </>
       )}
       {reportMode === REPORT_MODE.STACKED_BAR_WITH_LINE && (
@@ -621,31 +645,38 @@ const View = (props) => {
                   },
                   title: {
                     display: true,
-                    text: `Sum of ${numberField.label}`,
+                    text:
+                      (numberField?.value ?? "").length > 0
+                        ? `Sum of ${numberField.label}`
+                        : `Count of ${targetTypeLabel}`,
                   },
                 },
               }}
               data={createDataForSum(issueResponseJson)}
             />
           </Box>
-          <Box padding="space.100" />
-          <Box>
-            <Line
-              options={{
-                responsive: true,
-                plugins: {
-                  legend: {
-                    position: "bottom",
-                  },
-                  title: {
-                    display: true,
-                    text: `Count of ${targetTypeLabel} with ${numberField.label}`,
-                  },
-                },
-              }}
-              data={createDataForCount(issueResponseJson)}
-            />
-          </Box>
+          {(numberField?.value ?? "").length > 0 && (
+            <>
+              <Box padding="space.100" />
+              <Box>
+                <Line
+                  options={{
+                    responsive: true,
+                    plugins: {
+                      legend: {
+                        position: "bottom",
+                      },
+                      title: {
+                        display: true,
+                        text: `Count of ${targetTypeLabel} with ${numberField.label}`,
+                      },
+                    },
+                  }}
+                  data={createDataForCount(issueResponseJson)}
+                />
+              </Box>
+            </>
+          )}
         </>
       )}
       {reportMode === REPORT_MODE.LINE_WITH_BAR && (

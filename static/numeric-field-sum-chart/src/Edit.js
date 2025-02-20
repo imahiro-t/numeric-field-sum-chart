@@ -86,10 +86,12 @@ const Edit = (props) => {
       )
     : [];
   const numberFieldOptions = numberFieldResponseJson
-    ? numberFieldResponseJson.map((numberField) => ({
-        label: numberField.name,
-        value: numberField.id,
-      }))
+    ? [{ label: "COUNT ONLY", value: "" }].concat(
+        numberFieldResponseJson.map((numberField) => ({
+          label: numberField.name,
+          value: numberField.id,
+        }))
+      )
     : [];
   const customReportTypeFieldOptions = customReportTypeFieldResponseJson
     ? customReportTypeFieldResponseJson.map((customReportTypeField) => ({

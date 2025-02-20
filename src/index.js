@@ -119,6 +119,11 @@ resolver.define("searchIssues", async (req) => {
     return condition;
   };
 
+  const numberFieldCondition = (numberField) => {
+    if (numberField.length === 0) return "";
+    return `and ${clauseName(numberField)} >= 0`;
+  };
+
   const jql = isCumulative
     ? `project = ${project} ${issueTypesCondition(
         issueType
@@ -127,22 +132,19 @@ resolver.define("searchIssues", async (req) => {
       )} and resolutiondate < ${createTermCondition(
         dateToForQuery
       )} and statusCategory = Done) or statusCategory != Done) order by created DESC`
-    : `project = ${project} ${issueTypesCondition(issueType)} and ${clauseName(
-        numberField
-      )} >= 0 and ${clauseName(dateTimeField)} >= ${createTermCondition(
-        dateFrom
-      )} and ${clauseName(dateTimeField)} < ${createTermCondition(
-        dateToForQuery
-      )} order by ${clauseName(dateTimeField)} DESC`;
+    : `project = ${project} ${issueTypesCondition(
+        issueType
+      )} ${numberFieldCondition(numberField)} and ${clauseName(
+        dateTimeField
+      )} >= ${createTermCondition(dateFrom)} and ${clauseName(
+        dateTimeField
+      )} < ${createTermCondition(dateToForQuery)} order by ${clauseName(
+        dateTimeField
+      )} DESC`;
 
   const body = {
-    fields: [
-      numberField,
-      dateTimeField,
-      sprintField,
-      "created",
-      "resolutiondate",
-    ]
+    fields: [dateTimeField, sprintField, "created", "resolutiondate"]
+      .concat(numberField.length === 0 ? [] : [numberField])
       .concat(
         targetType === TARGET_TYPE.ASSIGNEE ? ["assignee"] : ["issuetype"]
       )
@@ -361,7 +363,7 @@ const createResponseValue = (
       ? initSprintStore(targetValues, minSprint, maxSprint)
       : initCustomFieldStore(targetValues, customReportTypeOptions);
   issues.forEach((issue) => {
-    const value = issue.fields[numberField];
+    const value = numberField.length === 0 ? 1 : issue.fields[numberField];
     const date = issue.fields[dateTimeField];
     const sprint = issue.fields["sprintNumber"];
     const customFieldValue = Number.isFinite(
