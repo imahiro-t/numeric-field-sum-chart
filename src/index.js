@@ -281,19 +281,19 @@ const createCumulativeResponseValue = (
       ? sprintTargetDates(sprintMap, minSprint, maxSprint)
       : monthlyTargetDates(new Date(dateFrom), new Date(dateTo));
   for (let i = 0; i < targetDates.length - 1; i++) {
+    const date = targetDates[i + 1].getTime();
+    const sprint = sprintDateMap[targetDates[i + 1].getTime()];
+    const term =
+      reportType === REPORT_TYPE.MONTHLY
+        ? createMonthlyTermKey(new Date(date))
+        : reportType === REPORT_TYPE.WEEKLY
+        ? createWeeklyTermKey(new Date(date))
+        : reportType === REPORT_TYPE.DAILY
+        ? createDailyTermKey(new Date(date))
+        : reportType === REPORT_TYPE.SPRINT
+        ? `Sprint ${sprint}`
+        : createMonthlyTermKey(new Date(date));
     issues.forEach((issue) => {
-      const date = targetDates[i + 1].getTime();
-      const sprint = sprintDateMap[targetDates[i + 1].getTime()];
-      const term =
-        reportType === REPORT_TYPE.MONTHLY
-          ? createMonthlyTermKey(new Date(date))
-          : reportType === REPORT_TYPE.WEEKLY
-          ? createWeeklyTermKey(new Date(date))
-          : reportType === REPORT_TYPE.DAILY
-          ? createDailyTermKey(new Date(date))
-          : reportType === REPORT_TYPE.SPRINT
-          ? `Sprint ${sprint}`
-          : createMonthlyTermKey(new Date(date));
       if (
         store[`${term}-DONE`] &&
         store[`${term}-TODO / DOING`] &&
@@ -311,10 +311,16 @@ const createCumulativeResponseValue = (
       }
     });
   }
-  return Object.keys(store)
+  const ss = Object.keys(store)
     .sort()
     .map((key) => store[key])
     .sort((a, b) => Number(a.order) - Number(b.order));
+  ss.forEach((s, index) => {
+    if (s.count === 0 && index > 1) {
+      s.count = ss[index - 2].count;
+    }
+  });
+  return ss;
 };
 
 const createResponseValue = (
