@@ -146,7 +146,11 @@ resolver.define("searchIssues", async (req) => {
     fields: [dateTimeField, sprintField, "created", "resolutiondate"]
       .concat(numberField.length === 0 ? [] : [numberField])
       .concat(
-        targetType === TARGET_TYPE.ASSIGNEE ? ["assignee"] : ["issuetype"]
+        targetType === TARGET_TYPE.ASSIGNEE
+          ? ["assignee"]
+          : targetType === TARGET_TYPE.EPIC
+          ? ["parent"]
+          : ["issuetype"]
       )
       .concat(reportType === REPORT_TYPE.CUSTOM ? [customReportTypeField] : []),
     fieldsByKeys: false,
@@ -336,6 +340,8 @@ const createResponseValue = (
   const targetValues =
     targetType === TARGET_TYPE.ASSIGNEE
       ? assigneeNames(issues)
+      : targetType === TARGET_TYPE.EPIC
+      ? epicNames(issues)
       : issueTypes(issues);
   const minSprint = Math.min(
     ...issues
@@ -394,6 +400,13 @@ const createResponseValue = (
         store[assigneeKey].count++;
         store[assigneeKey].sum += value;
       }
+    } else if (targetType === TARGET_TYPE.EPIC) {
+      const epicName = issue.fields.parent?.fields?.summary ?? "None";
+      const epicKey = `${term}-${epicName}`;
+      if (store[epicKey]) {
+        store[epicKey].count++;
+        store[epicKey].sum += value;
+      }
     } else {
       const issueType = issue.fields.issuetype.name;
       const issueKey = `${term}-${issueType}`;
@@ -417,6 +430,12 @@ const issueTypes = (issues) => {
 const assigneeNames = (issues) => {
   return issues
     .map((issue) => issue.fields.assignee?.displayName ?? "Unassigned")
+    .filter(unique);
+};
+
+const epicNames = (issues) => {
+  return issues
+    .map((issue) => issue.fields.parent?.fields?.summary ?? "None")
     .filter(unique);
 };
 

@@ -57,7 +57,11 @@ const View = (props) => {
       ? customReportTypeField?.label ?? ""
       : "Term";
   const targetTypeLabel =
-    targetType === TARGET_TYPE.ISSUE ? "Issues" : "Assignees";
+    targetType === TARGET_TYPE.ISSUE
+      ? "Issues"
+      : targetType === TARGET_TYPE.ASSIGNEE
+      ? "Assignees"
+      : "Epics";
 
   const currentDate = new Date();
   const oneYearAgo = new Date();

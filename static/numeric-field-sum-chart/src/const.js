@@ -14,6 +14,7 @@ export const REPORT_MODE = {
 export const TARGET_TYPE = {
   ISSUE: "issue",
   ASSIGNEE: "assignee",
+  EPIC: "epic",
 };
 
 export const REPORT_TYPE = {

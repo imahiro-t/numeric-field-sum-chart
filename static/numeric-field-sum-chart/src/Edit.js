@@ -108,6 +108,7 @@ const Edit = (props) => {
   const targetTypeOptions = [
     { name: "targetType", value: TARGET_TYPE.ISSUE, label: "Issue" },
     { name: "targetType", value: TARGET_TYPE.ASSIGNEE, label: "Assignee" },
+    { name: "targetType", value: TARGET_TYPE.EPIC, label: "Epic" },
   ];
   const reportTypeOptions = [
     { name: "reportType", value: REPORT_TYPE.MONTHLY, label: "Monthly" },
