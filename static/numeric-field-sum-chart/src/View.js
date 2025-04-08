@@ -40,6 +40,7 @@ const View = (props) => {
     project,
     issueType,
     numberField,
+    customTargetTypeField,
     customReportTypeField,
     dateTimeField,
     reportMode,
@@ -61,6 +62,8 @@ const View = (props) => {
       ? "Issues"
       : targetType === TARGET_TYPE.ASSIGNEE
       ? "Assignees"
+      : targetType === TARGET_TYPE.CUSTOM
+      ? customTargetTypeField?.label ?? ""
       : "Epics";
 
   const currentDate = new Date();
@@ -100,6 +103,7 @@ const View = (props) => {
           ? issueType.filter((x) => x.value.length > 0).map((x) => x.value)
           : [issueType.value],
         numberField: numberField?.value ?? "",
+        customTargetTypeField: customTargetTypeField?.value,
         customReportTypeField: customReportTypeField?.value,
         dateTimeField: dateTimeField?.value,
         targetType: targetType,

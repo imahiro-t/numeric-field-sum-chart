@@ -14,6 +14,7 @@ import {
   FIELD_NAME_PROJECT,
   FIELD_NAME_ISSUE_TYPE,
   FIELD_NAME_NUMBER_FIELD,
+  FIELD_NAME_CUSTOM_TARGET_TYPE_FIELD,
   FIELD_NAME_CUSTOM_REPORT_TYPE_FIELD,
   FIELD_NAME_DATE_TIME_FIELD,
   FIELD_NAME_REPORT_MODE,
@@ -29,6 +30,7 @@ const Edit = (props) => {
     project,
     issueType,
     numberField,
+    customTargetTypeField,
     customReportTypeField,
     dateTimeField,
     reportMode,
@@ -42,6 +44,10 @@ const Edit = (props) => {
   const [issueTypeResponseJson, setIssueTypeResponseJson] = useState();
   const [numberFieldResponseJson, setNumberFieldResponseJson] = useState();
   const [
+    customTargetTypeFieldResponseJson,
+    setCustomTargetTypeFieldResponseJson,
+  ] = useState();
+  const [
     customReportTypeFieldResponseJson,
     setCustomReportTypeFieldResponseJson,
   ] = useState();
@@ -49,10 +55,13 @@ const Edit = (props) => {
   const [selectedProject, setSelectedProject] = useState(project);
   const [selectedIssueType, setSelectedIssueType] = useState(issueType);
   const [selectedNumberField, setSelectedNumberField] = useState(numberField);
+  const [selectedCustomTargetTypeField, setSelectedCustomTargetTypeField] =
+    useState(customTargetTypeField);
   const [selectedCustomReportTypeField, setSelectedCustomReportTypeField] =
     useState(customReportTypeField);
   const [selectedDateTimeField, setSelectedDateTimeField] =
     useState(dateTimeField);
+  const [selectedTargetType, setSelectedTargetType] = useState(targetType);
   const [selectedReportType, setSelectedReportType] = useState(reportType);
   const [selectedReportMode, setSelectedReportMode] = useState(reportMode);
   const [selectedTermType, setSelectedTermType] = useState(termType);
@@ -65,6 +74,9 @@ const Edit = (props) => {
       );
     }
     invoke("getNumberFields", {}).then(setNumberFieldResponseJson);
+    invoke("getCustomTargetTypeFields", {}).then(
+      setCustomTargetTypeFieldResponseJson
+    );
     invoke("getCustomReportTypeFields", {}).then(
       setCustomReportTypeFieldResponseJson
     );
@@ -93,6 +105,12 @@ const Edit = (props) => {
         }))
       )
     : [];
+  const customTargetTypeFieldOptions = customTargetTypeFieldResponseJson
+    ? customTargetTypeFieldResponseJson.map((customTargetTypeField) => ({
+        label: customTargetTypeField.name,
+        value: customTargetTypeField.id,
+      }))
+    : [];
   const customReportTypeFieldOptions = customReportTypeFieldResponseJson
     ? customReportTypeFieldResponseJson.map((customReportTypeField) => ({
         label: customReportTypeField.name,
@@ -109,6 +127,7 @@ const Edit = (props) => {
     { name: "targetType", value: TARGET_TYPE.ISSUE, label: "Issue" },
     { name: "targetType", value: TARGET_TYPE.ASSIGNEE, label: "Assignee" },
     { name: "targetType", value: TARGET_TYPE.EPIC, label: "Epic" },
+    { name: "targetType", value: TARGET_TYPE.CUSTOM, label: "Custom" },
   ];
   const reportTypeOptions = [
     { name: "reportType", value: REPORT_TYPE.MONTHLY, label: "Monthly" },
@@ -181,12 +200,20 @@ const Edit = (props) => {
     setSelectedNumberField(data);
   };
 
+  const handleCustomTargetTypeFieldChange = (data) => {
+    setSelectedCustomTargetTypeField(data);
+  };
+
   const handleCustomReportTypeFieldChange = (data) => {
     setSelectedCustomReportTypeField(data);
   };
 
   const handleDateTimeFieldChange = (data) => {
     setSelectedDateTimeField(data);
+  };
+
+  const handleTargetTypeChange = (data) => {
+    setSelectedTargetType(data.target.value);
   };
 
   const handleReportTypeChange = (data) => {
@@ -211,11 +238,17 @@ const Edit = (props) => {
     if (!data[FIELD_NAME_NUMBER_FIELD]) {
       data[FIELD_NAME_NUMBER_FIELD] = selectedNumberField;
     }
+    if (!data[FIELD_NAME_CUSTOM_TARGET_TYPE_FIELD]) {
+      data[FIELD_NAME_CUSTOM_TARGET_TYPE_FIELD] = selectedCustomTargetTypeField;
+    }
     if (!data[FIELD_NAME_CUSTOM_REPORT_TYPE_FIELD]) {
       data[FIELD_NAME_CUSTOM_REPORT_TYPE_FIELD] = selectedCustomReportTypeField;
     }
     if (!data[FIELD_NAME_DATE_TIME_FIELD]) {
       data[FIELD_NAME_DATE_TIME_FIELD] = selectedDateTimeField;
+    }
+    if (!data[FIELD_NAME_TARGET_TYPE]) {
+      data[FIELD_NAME_TARGET_TYPE] = selectedTargetType;
     }
     if (!data[FIELD_NAME_REPORT_TYPE]) {
       data[FIELD_NAME_REPORT_TYPE] = selectedReportType;
@@ -265,7 +298,25 @@ const Edit = (props) => {
                   {...fieldProps}
                   defaultValue={targetType}
                   options={targetTypeOptions}
+                  onChange={handleTargetTypeChange}
                   isDisabled={selectedReportMode === REPORT_MODE.CFD}
+                />
+              )}
+            </Field>
+            <Field
+              name={FIELD_NAME_CUSTOM_TARGET_TYPE_FIELD}
+              label="Target Type Custom Field"
+            >
+              {({ fieldProps }) => (
+                <Select
+                  {...fieldProps}
+                  defaultValue={customTargetTypeField}
+                  options={customTargetTypeFieldOptions}
+                  onChange={handleCustomTargetTypeFieldChange}
+                  isDisabled={
+                    selectedTargetType !== TARGET_TYPE.CUSTOM ||
+                    selectedReportMode === REPORT_MODE.CFD
+                  }
                 />
               )}
             </Field>

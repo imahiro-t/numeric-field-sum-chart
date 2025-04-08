@@ -60,6 +60,19 @@ resolver.define("getNumberFields", async (req) => {
   );
 });
 
+resolver.define("getCustomTargetTypeFields", async (req) => {
+  const response = await api.asUser().requestJira(route`/rest/api/3/field`, {
+    headers: {
+      Accept: "application/json",
+    },
+  });
+  return (await response.json()).filter(
+    (field) =>
+      field.schema &&
+      (field.schema.type === "string" || field.schema.type === "option")
+  );
+});
+
 resolver.define("getCustomReportTypeFields", async (req) => {
   const response = await api.asUser().requestJira(route`/rest/api/3/field`, {
     headers: {
@@ -90,6 +103,7 @@ resolver.define("searchIssues", async (req) => {
     project,
     issueType,
     numberField,
+    customTargetTypeField,
     customReportTypeField,
     dateTimeField,
     reportType,
@@ -150,6 +164,8 @@ resolver.define("searchIssues", async (req) => {
           ? ["assignee"]
           : targetType === TARGET_TYPE.EPIC
           ? ["parent"]
+          : targetType === TARGET_TYPE.CUSTOM
+          ? [customTargetTypeField]
           : ["issuetype"]
       )
       .concat(reportType === REPORT_TYPE.CUSTOM ? [customReportTypeField] : []),
@@ -186,6 +202,7 @@ resolver.define("searchIssues", async (req) => {
     : createResponseValue(
         issues,
         numberField,
+        customTargetTypeField,
         customReportTypeField,
         dateTimeField,
         reportType,
@@ -330,6 +347,7 @@ const createCumulativeResponseValue = (
 const createResponseValue = (
   issues,
   numberField,
+  customTargetTypeField,
   customReportTypeField,
   dateTimeField,
   reportType,
@@ -342,6 +360,8 @@ const createResponseValue = (
       ? assigneeNames(issues)
       : targetType === TARGET_TYPE.EPIC
       ? epicNames(issues)
+      : targetType === TARGET_TYPE.CUSTOM
+      ? customNames(issues, customTargetTypeField)
       : issueTypes(issues);
   const minSprint = Math.min(
     ...issues
@@ -407,6 +427,16 @@ const createResponseValue = (
         store[epicKey].count++;
         store[epicKey].sum += value;
       }
+    } else if (targetType === TARGET_TYPE.CUSTOM) {
+      const customName =
+        issue.fields[customTargetTypeField]?.value ??
+        issue.fields[customTargetTypeField] ??
+        "None";
+      const epicKey = `${term}-${customName}`;
+      if (store[epicKey]) {
+        store[epicKey].count++;
+        store[epicKey].sum += value;
+      }
     } else {
       const issueType = issue.fields.issuetype.name;
       const issueKey = `${term}-${issueType}`;
@@ -436,6 +466,17 @@ const assigneeNames = (issues) => {
 const epicNames = (issues) => {
   return issues
     .map((issue) => issue.fields.parent?.fields?.summary ?? "None")
+    .filter(unique);
+};
+
+const customNames = (issues, customTargetTypeField) => {
+  return issues
+    .map(
+      (issue) =>
+        issue.fields[customTargetTypeField]?.value ??
+        issue.fields[customTargetTypeField] ??
+        "None"
+    )
     .filter(unique);
 };
 
