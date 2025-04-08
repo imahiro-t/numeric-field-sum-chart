@@ -214,7 +214,7 @@ const View = (props) => {
     };
   };
 
-  const createDataForSum = (values) => {
+  const createDataForSum = (values, isRatio = false) => {
     const labels = createLabels(values);
     const valueMap = values.reduce(
       (acc, value) => createMap(value.target, value.sum, acc),
@@ -228,11 +228,11 @@ const View = (props) => {
     }));
     return {
       labels: labels,
-      datasets: datasets,
+      datasets: isRatio ? transformToRatio(datasets) : datasets,
     };
   };
 
-  const createDataForCount = (values) => {
+  const createDataForCount = (values, isRatio = false) => {
     const labels = createLabels(values);
     const valueMap = values.reduce(
       (acc, value) => createMap(value.target, value.count, acc),
@@ -246,8 +246,28 @@ const View = (props) => {
     }));
     return {
       labels: labels,
-      datasets: datasets,
+      datasets: isRatio ? transformToRatio(datasets) : datasets,
     };
+  };
+
+  const transformToRatio = (datasets) => {
+    let sums = [];
+    const datasets2 = structuredClone(datasets);
+    datasets2.forEach((dataset, index) => {
+      if (index === 0) {
+        sums = Array.from(dataset.data);
+      } else {
+        dataset.data.forEach((_data, index2) => {
+          sums[index2] = sums[index2] + dataset.data[index2];
+        });
+      }
+    });
+    datasets2.forEach((dataset) => {
+      dataset.data.forEach((_data, index2) => {
+        dataset.data[index2] = (dataset.data[index2] * 100) / sums[index2];
+      });
+    });
+    return datasets2;
   };
 
   const createDataForCFD = (values) => {
@@ -601,6 +621,64 @@ const View = (props) => {
                     },
                   }}
                   data={createDataForCount(issueResponseJson)}
+                />
+              </Box>
+            </>
+          )}
+        </>
+      )}
+      {reportMode === REPORT_MODE.STACKED_RATIO_BAR && (
+        <>
+          <Box>
+            <Bar
+              options={{
+                responsive: true,
+                x: {
+                  stacked: true,
+                },
+                y: {
+                  stacked: true,
+                },
+                plugins: {
+                  legend: {
+                    position: "bottom",
+                  },
+                  title: {
+                    display: true,
+                    text:
+                      (numberField?.value ?? "").length > 0
+                        ? `Sum of ${numberField.label}`
+                        : `Count of ${targetTypeLabel}`,
+                  },
+                },
+              }}
+              data={createDataForSum(issueResponseJson, true)}
+            />
+          </Box>
+          {(numberField?.value ?? "").length > 0 && (
+            <>
+              <Box padding="space.100" />
+              <Box>
+                <Bar
+                  options={{
+                    responsive: true,
+                    x: {
+                      stacked: true,
+                    },
+                    y: {
+                      stacked: true,
+                    },
+                    plugins: {
+                      legend: {
+                        position: "bottom",
+                      },
+                      title: {
+                        display: true,
+                        text: `Count of ${targetTypeLabel} with ${numberField.label}`,
+                      },
+                    },
+                  }}
+                  data={createDataForCount(issueResponseJson, true)}
                 />
               </Box>
             </>

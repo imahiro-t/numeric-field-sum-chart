@@ -146,6 +146,11 @@ const Edit = (props) => {
       value: REPORT_MODE.DOUGHNUT,
       label: "Doughnut Chart",
     },
+    {
+      name: "reportMode",
+      value: REPORT_MODE.STACKED_RATIO_BAR,
+      label: "Stacked Ratio Bar Chart",
+    },
     { name: "reportMode", value: REPORT_MODE.TABLE, label: "Table" },
     {
       name: "reportMode",
