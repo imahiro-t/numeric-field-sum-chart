@@ -191,8 +191,8 @@ const View = (props) => {
       label: target,
       yAxisID: "y",
       data: valueMap[target],
-      borderColor: sumColors[index % 7],
-      backgroundColor: sumColors[index % 7],
+      borderColor: sumColors[index % sumColors.length],
+      backgroundColor: sumColors[index % sumColors.length],
     }));
 
     const valueMap2 = values.reduce(
@@ -204,8 +204,8 @@ const View = (props) => {
       label: target,
       yAxisID: "y1",
       data: valueMap2[target],
-      borderColor: countColors[index % 7],
-      backgroundColor: countColors[index % 7],
+      borderColor: countColors[index % countColors.length],
+      backgroundColor: countColors[index % countColors.length],
     }));
 
     return {
@@ -223,8 +223,8 @@ const View = (props) => {
     const datasets = Object.keys(valueMap).map((target, index) => ({
       label: target,
       data: valueMap[target],
-      borderColor: sumColors[index % 7],
-      backgroundColor: sumColors[index % 7],
+      borderColor: sumColors[index % sumColors.length],
+      backgroundColor: sumColors[index % sumColors.length],
     }));
     return {
       labels: labels,
@@ -241,8 +241,8 @@ const View = (props) => {
     const datasets = Object.keys(valueMap).map((target, index) => ({
       label: target,
       data: valueMap[target],
-      borderColor: countColors[index % 7],
-      backgroundColor: countColors[index % 7],
+      borderColor: countColors[index % countColors.length],
+      backgroundColor: countColors[index % countColors.length],
     }));
     return {
       labels: labels,
@@ -259,8 +259,8 @@ const View = (props) => {
     const datasets = ["DONE", "TODO / DOING"].map((target, index) => ({
       label: target,
       data: valueMap[target],
-      borderColor: countColors[index % 7],
-      backgroundColor: countColors[index % 7],
+      borderColor: countColors[index % countColors.length],
+      backgroundColor: countColors[index % countColors.length],
       fill: index === 0 ? "origin" : "-1",
     }));
     return {
