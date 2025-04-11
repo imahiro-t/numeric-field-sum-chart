@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { invoke } from "@forge/bridge";
-import { Box } from "@atlaskit/primitives";
+import { Box, Inline } from "@atlaskit/primitives";
+import { IconButton } from "@atlaskit/button/new";
 import DynamicTable from "@atlaskit/dynamic-table";
+import SVG from "@atlaskit/icon/svg";
 import { REPORT_MODE, REPORT_TYPE, TARGET_TYPE, TERM_TYPE } from "./const";
 import { formatDate } from "./util";
 import {
@@ -36,6 +38,9 @@ ChartJS.register(
 
 const View = (props) => {
   const [issueResponseJson, setIssueResponseJson] = useState();
+  const [secondaryChartVisibleMode, setSecondaryChartVisibleMode] =
+    useState("show");
+  const [chartVisibleMode, setChartVisibleMode] = useState("show");
   const {
     project,
     issueType,
@@ -399,12 +404,113 @@ const View = (props) => {
     ],
   };
 
+  const ChartIcon = (props) => {
+    const { size, mode } = props;
+    return mode === "show" ? (
+      <SVG size={size}>
+        <path
+          fill="currentColor"
+          d="M21 5.47L12 12L7.62 7.62L3 11V8.52L7.83 5l4.38 4.38L21 3zM21 15h-4.7l-4.17 3.34L6 12.41l-3 2.13V17l2.8-2l6.2 6l5-4h4z"
+          stroke-width="1.0"
+          stroke="currentColor"
+        />
+      </SVG>
+    ) : (
+      <SVG size={size}>
+        <path
+          fill="currentColor"
+          d="M21 5.47L12 12L7.62 7.62L3 11V8.52L7.83 5l4.38 4.38L21 3zM21 15h-4.7l-4.17 3.34L6 12.41l-3 2.13V17l2.8-2l6.2 6l5-4h4z"
+        />
+      </SVG>
+    );
+  };
+
+  const SecondaryChartIcon = (props) => {
+    const { size, mode } = props;
+    return mode === "show" ? (
+      <SVG size={size}>
+        <path fill="currentColor" d="M4 9h4v11H4zm12 4h4v7h-4zm-6-9h4v16h-4z" />
+      </SVG>
+    ) : (
+      <SVG size={size}>
+        <path
+          fill="currentColor"
+          d="M4 20V9h4v11zm6 0V10l4 4v6zm4-8.85l-4-4V4h4zm6 6l-4-4V13h4zm-.225 5.475l-18.4-18.4L2.8 2.8l18.4 18.4z"
+          stroke-width="0.8"
+          stroke="currentColor"
+        />
+      </SVG>
+    );
+  };
+
+  const chartRef = useRef();
+  const chartRef2 = useRef();
+
+  const toggleChartVisible = () => {
+    setChartVisible(chartRef.current, chartVisibleMode !== "show");
+    setChartVisible(chartRef2.current, chartVisibleMode !== "show");
+    setChartVisibleMode(chartVisibleMode === "show" ? "hide" : "show");
+  };
+
+  const setChartVisible = (chart, visible) => {
+    if (chart) {
+      let i = 0;
+      while (true) {
+        const meta = chart.getDatasetMeta(i);
+        if (!meta?.type) break;
+        chart.setDatasetVisibility(i, visible);
+        i++;
+      }
+      chart.update();
+    }
+  };
+
+  const toggleSecondChartVisible = () => {
+    setSecondaryChartVisibleMode(
+      secondaryChartVisibleMode === "show" ? "hide" : "show"
+    );
+  };
+
   return issueResponseJson ? (
     <>
+      {reportMode !== REPORT_MODE.TABLE && (
+        <Inline alignBlock="center" spread="end">
+          {reportMode !== REPORT_MODE.PIE &&
+            reportMode !== REPORT_MODE.DOUGHNUT && (
+              <IconButton
+                icon={(iconProps) => (
+                  <ChartIcon
+                    {...iconProps}
+                    size="small"
+                    mode={chartVisibleMode}
+                  />
+                )}
+                appearance="subtle"
+                spacing="compact"
+                onClick={() => toggleChartVisible(chartRef)}
+                isTooltipDisabled={true}
+              ></IconButton>
+            )}
+          <IconButton
+            icon={(iconProps) => (
+              <SecondaryChartIcon
+                {...iconProps}
+                size="small"
+                mode={secondaryChartVisibleMode}
+              />
+            )}
+            appearance="subtle"
+            spacing="compact"
+            onClick={() => toggleSecondChartVisible(chartRef)}
+            isTooltipDisabled={true}
+          ></IconButton>
+        </Inline>
+      )}
       {reportMode === REPORT_MODE.PIE && (
         <>
           <Box>
             <Pie
+              ref={chartRef}
               options={{
                 plugins: {
                   legend: {
@@ -421,22 +527,24 @@ const View = (props) => {
               }}
               data={createDataForPieSum(issueResponseJson)}
             />
-            {(numberField?.value ?? "").length > 0 && (
-              <Pie
-                options={{
-                  plugins: {
-                    legend: {
-                      position: "bottom",
+            {(numberField?.value ?? "").length > 0 &&
+              secondaryChartVisibleMode === "show" && (
+                <Pie
+                  ref={chartRef2}
+                  options={{
+                    plugins: {
+                      legend: {
+                        position: "bottom",
+                      },
+                      title: {
+                        display: true,
+                        text: `Count of ${targetTypeLabel} with ${numberField.label}`,
+                      },
                     },
-                    title: {
-                      display: true,
-                      text: `Count of ${targetTypeLabel} with ${numberField.label}`,
-                    },
-                  },
-                }}
-                data={createDataForPieCount(issueResponseJson)}
-              />
-            )}
+                  }}
+                  data={createDataForPieCount(issueResponseJson)}
+                />
+              )}
           </Box>
         </>
       )}
@@ -444,6 +552,7 @@ const View = (props) => {
         <>
           <Box>
             <Doughnut
+              ref={chartRef}
               options={{
                 plugins: {
                   legend: {
@@ -460,22 +569,24 @@ const View = (props) => {
               }}
               data={createDataForPieSum(issueResponseJson)}
             />
-            {(numberField?.value ?? "").length > 0 && (
-              <Doughnut
-                options={{
-                  plugins: {
-                    legend: {
-                      position: "bottom",
+            {(numberField?.value ?? "").length > 0 &&
+              secondaryChartVisibleMode === "show" && (
+                <Doughnut
+                  ref={chartRef2}
+                  options={{
+                    plugins: {
+                      legend: {
+                        position: "bottom",
+                      },
+                      title: {
+                        display: true,
+                        text: `Count of ${targetTypeLabel} with ${numberField.label}`,
+                      },
                     },
-                    title: {
-                      display: true,
-                      text: `Count of ${targetTypeLabel} with ${numberField.label}`,
-                    },
-                  },
-                }}
-                data={createDataForPieCount(issueResponseJson)}
-              />
-            )}
+                  }}
+                  data={createDataForPieCount(issueResponseJson)}
+                />
+              )}
           </Box>
         </>
       )}
@@ -483,6 +594,7 @@ const View = (props) => {
         <>
           <Box>
             <Bar
+              ref={chartRef}
               options={{
                 responsive: true,
                 plugins: {
@@ -501,75 +613,101 @@ const View = (props) => {
               data={createDataForSum(issueResponseJson)}
             />
           </Box>
-          {(numberField?.value ?? "").length > 0 && (
-            <>
-              <Box padding="space.100" />
-              <Box>
-                <Bar
-                  options={{
-                    responsive: true,
-                    plugins: {
-                      legend: {
-                        position: "bottom",
+          {(numberField?.value ?? "").length > 0 &&
+            secondaryChartVisibleMode === "show" && (
+              <>
+                <Box padding="space.100" />
+                <Box>
+                  <Bar
+                    ref={chartRef2}
+                    options={{
+                      responsive: true,
+                      plugins: {
+                        legend: {
+                          position: "bottom",
+                        },
+                        title: {
+                          display: true,
+                          text: `Count of ${targetTypeLabel} with ${numberField.label}`,
+                        },
                       },
-                      title: {
-                        display: true,
-                        text: `Count of ${targetTypeLabel} with ${numberField.label}`,
-                      },
-                    },
-                  }}
-                  data={createDataForCount(issueResponseJson)}
-                />
-              </Box>
-            </>
-          )}
+                    }}
+                    data={createDataForCount(issueResponseJson)}
+                  />
+                </Box>
+              </>
+            )}
         </>
       )}
       {reportMode === REPORT_MODE.BAR_WITH_LINE && (
         <>
           <Box>
-            <Bar
-              options={{
-                responsive: true,
-                plugins: {
-                  legend: {
-                    position: "bottom",
-                  },
-                  title: {
-                    display: true,
-                    text: `Sum of ${numberField.label}`,
-                  },
-                },
-                scales: {
-                  y: {
-                    type: "linear",
-                    display: true,
-                    position: "left",
-                    ticks: {
-                      color: "rgba(0, 0, 0, 1)",
+            {secondaryChartVisibleMode === "show" && (
+              <Bar
+                ref={chartRef}
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: {
+                      position: "bottom",
                     },
-                    grid: {
-                      drawBorder: true,
-                      drawTicks: true,
-                      color: "rgba(0, 0, 0, 0.2)",
-                    },
-                  },
-                  y1: {
-                    type: "linear",
-                    display: true,
-                    position: "right",
                     title: {
                       display: true,
-                      text: `Count of ${targetTypeLabel}`,
-                      font: {
-                        size: 12,
+                      text: `Sum of ${numberField.label}`,
+                    },
+                  },
+                  scales: {
+                    y: {
+                      type: "linear",
+                      display: true,
+                      position: "left",
+                      ticks: {
+                        color: "rgba(0, 0, 0, 1)",
+                      },
+                      grid: {
+                        drawBorder: true,
+                        drawTicks: true,
+                        color: "rgba(0, 0, 0, 0.2)",
+                      },
+                    },
+                    y1: {
+                      type: "linear",
+                      display: true,
+                      position: "right",
+                      title: {
+                        display: true,
+                        text: `Count of ${targetTypeLabel}`,
+                        font: {
+                          size: 12,
+                        },
                       },
                     },
                   },
-                },
-              }}
-              data={createDataForSumWithCount(issueResponseJson, "line")}
-            />
+                }}
+                data={createDataForSumWithCount(issueResponseJson, "line")}
+              />
+            )}
+            {secondaryChartVisibleMode === "hide" && (
+              <Bar
+                ref={chartRef}
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: {
+                      position: "bottom",
+                    },
+                    title: {
+                      display: true,
+                      text:
+                        (numberField?.value ?? "").length > 0
+                          ? `Sum of ${numberField.label}`
+                          : `Count of ${targetTypeLabel}`,
+                    },
+                  },
+                }}
+                data={createDataForSum(issueResponseJson)}
+              />
+            )}
           </Box>
         </>
       )}
@@ -577,6 +715,7 @@ const View = (props) => {
         <>
           <Box>
             <Bar
+              ref={chartRef}
               options={{
                 responsive: true,
                 x: {
@@ -601,40 +740,43 @@ const View = (props) => {
               data={createDataForSum(issueResponseJson)}
             />
           </Box>
-          {(numberField?.value ?? "").length > 0 && (
-            <>
-              <Box padding="space.100" />
-              <Box>
-                <Bar
-                  options={{
-                    responsive: true,
-                    x: {
-                      stacked: true,
-                    },
-                    y: {
-                      stacked: true,
-                    },
-                    plugins: {
-                      legend: {
-                        position: "bottom",
+          {(numberField?.value ?? "").length > 0 &&
+            secondaryChartVisibleMode === "show" && (
+              <>
+                <Box padding="space.100" />
+                <Box>
+                  <Bar
+                    ref={chartRef2}
+                    options={{
+                      responsive: true,
+                      x: {
+                        stacked: true,
                       },
-                      title: {
-                        display: true,
-                        text: `Count of ${targetTypeLabel} with ${numberField.label}`,
+                      y: {
+                        stacked: true,
                       },
-                    },
-                  }}
-                  data={createDataForCount(issueResponseJson)}
-                />
-              </Box>
-            </>
-          )}
+                      plugins: {
+                        legend: {
+                          position: "bottom",
+                        },
+                        title: {
+                          display: true,
+                          text: `Count of ${targetTypeLabel} with ${numberField.label}`,
+                        },
+                      },
+                    }}
+                    data={createDataForCount(issueResponseJson)}
+                  />
+                </Box>
+              </>
+            )}
         </>
       )}
       {reportMode === REPORT_MODE.STACKED_RATIO_BAR && (
         <>
           <Box>
             <Bar
+              ref={chartRef}
               options={{
                 responsive: true,
                 x: {
@@ -659,87 +801,119 @@ const View = (props) => {
               data={createDataForSum(issueResponseJson, true)}
             />
           </Box>
-          {(numberField?.value ?? "").length > 0 && (
-            <>
-              <Box padding="space.100" />
-              <Box>
-                <Bar
-                  options={{
-                    responsive: true,
-                    x: {
-                      stacked: true,
-                    },
-                    y: {
-                      stacked: true,
-                    },
-                    plugins: {
-                      legend: {
-                        position: "bottom",
+          {(numberField?.value ?? "").length > 0 &&
+            secondaryChartVisibleMode === "show" && (
+              <>
+                <Box padding="space.100" />
+                <Box>
+                  <Bar
+                    ref={chartRef2}
+                    options={{
+                      responsive: true,
+                      x: {
+                        stacked: true,
                       },
-                      title: {
-                        display: true,
-                        text: `Count of ${targetTypeLabel} with ${numberField.label}`,
+                      y: {
+                        stacked: true,
                       },
-                    },
-                  }}
-                  data={createDataForCount(issueResponseJson, true)}
-                />
-              </Box>
-            </>
-          )}
+                      plugins: {
+                        legend: {
+                          position: "bottom",
+                        },
+                        title: {
+                          display: true,
+                          text: `Count of ${targetTypeLabel} with ${numberField.label}`,
+                        },
+                      },
+                    }}
+                    data={createDataForCount(issueResponseJson, true)}
+                  />
+                </Box>
+              </>
+            )}
         </>
       )}
       {reportMode === REPORT_MODE.STACKED_BAR_WITH_LINE && (
         <>
           <Box>
-            <Bar
-              options={{
-                responsive: true,
-                x: {
-                  stacked: true,
-                },
-                y: {
-                  stacked: true,
-                },
-                plugins: {
-                  legend: {
-                    position: "bottom",
+            {secondaryChartVisibleMode === "show" && (
+              <Bar
+                ref={chartRef}
+                options={{
+                  responsive: true,
+                  x: {
+                    stacked: true,
                   },
-                  title: {
-                    display: true,
-                    text: `Sum of ${numberField.label}`,
-                  },
-                },
-                scales: {
                   y: {
-                    type: "linear",
-                    display: true,
-                    position: "left",
-                    ticks: {
-                      color: "rgba(0, 0, 0, 1)",
-                    },
-                    grid: {
-                      drawBorder: true,
-                      drawTicks: true,
-                      color: "rgba(0, 0, 0, 0.2)",
-                    },
+                    stacked: true,
                   },
-                  y1: {
-                    type: "linear",
-                    display: true,
-                    position: "right",
+                  plugins: {
+                    legend: {
+                      position: "bottom",
+                    },
                     title: {
                       display: true,
-                      text: `Count of ${targetTypeLabel}`,
-                      font: {
-                        size: 12,
+                      text: `Sum of ${numberField.label}`,
+                    },
+                  },
+                  scales: {
+                    y: {
+                      type: "linear",
+                      display: true,
+                      position: "left",
+                      ticks: {
+                        color: "rgba(0, 0, 0, 1)",
+                      },
+                      grid: {
+                        drawBorder: true,
+                        drawTicks: true,
+                        color: "rgba(0, 0, 0, 0.2)",
+                      },
+                    },
+                    y1: {
+                      type: "linear",
+                      display: true,
+                      position: "right",
+                      title: {
+                        display: true,
+                        text: `Count of ${targetTypeLabel}`,
+                        font: {
+                          size: 12,
+                        },
                       },
                     },
                   },
-                },
-              }}
-              data={createDataForSumWithCount(issueResponseJson, "line")}
-            />
+                }}
+                data={createDataForSumWithCount(issueResponseJson, "line")}
+              />
+            )}
+            {secondaryChartVisibleMode === "hide" && (
+              <Bar
+                ref={chartRef}
+                options={{
+                  responsive: true,
+                  x: {
+                    stacked: true,
+                  },
+                  y: {
+                    stacked: true,
+                  },
+                  plugins: {
+                    legend: {
+                      position: "bottom",
+                    },
+                    title: {
+                      display: true,
+                      text:
+                        (numberField?.value ?? "").length > 0
+                          ? `Sum of ${numberField.label}`
+                          : `Count of ${targetTypeLabel}`,
+                    },
+                  },
+                }}
+                data={createDataForSum(issueResponseJson, true)}
+              />
+            )}
           </Box>
         </>
       )}
@@ -747,6 +921,7 @@ const View = (props) => {
         <>
           <Box>
             <Line
+              ref={chartRef}
               options={{
                 responsive: true,
                 plugins: {
@@ -765,75 +940,101 @@ const View = (props) => {
               data={createDataForSum(issueResponseJson)}
             />
           </Box>
-          {(numberField?.value ?? "").length > 0 && (
-            <>
-              <Box padding="space.100" />
-              <Box>
-                <Line
-                  options={{
-                    responsive: true,
-                    plugins: {
-                      legend: {
-                        position: "bottom",
+          {(numberField?.value ?? "").length > 0 &&
+            secondaryChartVisibleMode === "show" && (
+              <>
+                <Box padding="space.100" />
+                <Box>
+                  <Line
+                    ref={chartRef2}
+                    options={{
+                      responsive: true,
+                      plugins: {
+                        legend: {
+                          position: "bottom",
+                        },
+                        title: {
+                          display: true,
+                          text: `Count of ${targetTypeLabel} with ${numberField.label}`,
+                        },
                       },
-                      title: {
-                        display: true,
-                        text: `Count of ${targetTypeLabel} with ${numberField.label}`,
-                      },
-                    },
-                  }}
-                  data={createDataForCount(issueResponseJson)}
-                />
-              </Box>
-            </>
-          )}
+                    }}
+                    data={createDataForCount(issueResponseJson)}
+                  />
+                </Box>
+              </>
+            )}
         </>
       )}
       {reportMode === REPORT_MODE.LINE_WITH_BAR && (
         <>
           <Box>
-            <Line
-              options={{
-                responsive: true,
-                plugins: {
-                  legend: {
-                    position: "bottom",
-                  },
-                  title: {
-                    display: true,
-                    text: `Sum of ${numberField.label}`,
-                  },
-                },
-                scales: {
-                  y: {
-                    type: "linear",
-                    display: true,
-                    position: "left",
-                    ticks: {
-                      color: "rgba(0, 0, 0, 1)",
+            {secondaryChartVisibleMode === "show" && (
+              <Line
+                ref={chartRef}
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: {
+                      position: "bottom",
                     },
-                    grid: {
-                      drawBorder: true,
-                      drawTicks: true,
-                      color: "rgba(0, 0, 0, 0.2)",
-                    },
-                  },
-                  y1: {
-                    type: "linear",
-                    display: true,
-                    position: "right",
                     title: {
                       display: true,
-                      text: `Count of ${targetTypeLabel}`,
-                      font: {
-                        size: 12,
+                      text: `Sum of ${numberField.label}`,
+                    },
+                  },
+                  scales: {
+                    y: {
+                      type: "linear",
+                      display: true,
+                      position: "left",
+                      ticks: {
+                        color: "rgba(0, 0, 0, 1)",
+                      },
+                      grid: {
+                        drawBorder: true,
+                        drawTicks: true,
+                        color: "rgba(0, 0, 0, 0.2)",
+                      },
+                    },
+                    y1: {
+                      type: "linear",
+                      display: true,
+                      position: "right",
+                      title: {
+                        display: true,
+                        text: `Count of ${targetTypeLabel}`,
+                        font: {
+                          size: 12,
+                        },
                       },
                     },
                   },
-                },
-              }}
-              data={createDataForSumWithCount(issueResponseJson, "bar")}
-            />
+                }}
+                data={createDataForSumWithCount(issueResponseJson, "bar")}
+              />
+            )}
+            {secondaryChartVisibleMode === "hide" && (
+              <Line
+                ref={chartRef}
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: {
+                      position: "bottom",
+                    },
+                    title: {
+                      display: true,
+                      text:
+                        (numberField?.value ?? "").length > 0
+                          ? `Sum of ${numberField.label}`
+                          : `Count of ${targetTypeLabel}`,
+                    },
+                  },
+                }}
+                data={createDataForSum(issueResponseJson)}
+              />
+            )}
           </Box>
         </>
       )}
