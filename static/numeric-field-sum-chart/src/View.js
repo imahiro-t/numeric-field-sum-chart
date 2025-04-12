@@ -567,7 +567,7 @@ const View = (props) => {
 
   return issueResponseJson ? (
     <>
-      {reportMode !== REPORT_MODE.TABLE && (
+      {reportMode !== REPORT_MODE.TABLE && reportMode !== REPORT_MODE.CFD && (
         <Inline alignBlock="center" spread="end">
           {reportMode !== REPORT_MODE.PIE &&
             reportMode !== REPORT_MODE.DOUGHNUT && (
