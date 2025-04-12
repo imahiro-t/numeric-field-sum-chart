@@ -13,6 +13,7 @@
     "@atlaskit/radio": "^8.0.3",
     "@atlaskit/select": "^20.3.0",
     "@atlaskit/tabs": "^18.0.3",
+    "@atlaskit/textfield": "^8.0.4",
     "@atlaskit/tokens": "^4.7.0",
     "@forge/bridge": "^4.5.0",
     "chart.js": "^4.4.8",

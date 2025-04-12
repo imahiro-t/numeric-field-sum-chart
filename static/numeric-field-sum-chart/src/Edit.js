@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
-import Form, { Field, FormFooter } from "@atlaskit/form";
-import { Box } from "@atlaskit/primitives";
+import Form, { Field } from "@atlaskit/form";
+import { Box, Inline, Text } from "@atlaskit/primitives";
 import Select from "@atlaskit/select";
+import Textfield from "@atlaskit/textfield";
 import { RadioGroup } from "@atlaskit/radio";
 import { DatePicker } from "@atlaskit/datetime-picker";
-import Button, { ButtonGroup } from "@atlaskit/button";
+import { ButtonGroup } from "@atlaskit/button";
+import Button from "@atlaskit/button/new";
+import Tabs, { Tab, TabList, TabPanel } from "@atlaskit/tabs";
 import { view, invoke } from "@forge/bridge";
 import {
   REPORT_MODE,
@@ -23,6 +26,26 @@ import {
   FIELD_NAME_TERM_TYPE,
   FIELD_NAME_DATE_FROM,
   FIELD_NAME_DATE_TO,
+  FIELD_NAME_GROUP_LABEL_1,
+  FIELD_NAME_GROUP_LABEL_2,
+  FIELD_NAME_GROUP_LABEL_3,
+  FIELD_NAME_GROUP_LABEL_4,
+  FIELD_NAME_GROUP_LABEL_5,
+  FIELD_NAME_GROUP_LABEL_6,
+  FIELD_NAME_GROUP_LABEL_7,
+  FIELD_NAME_GROUP_LABEL_8,
+  FIELD_NAME_GROUP_LABEL_9,
+  FIELD_NAME_GROUP_LABEL_10,
+  FIELD_NAME_GROUP_ISSUE_TYPE_1,
+  FIELD_NAME_GROUP_ISSUE_TYPE_2,
+  FIELD_NAME_GROUP_ISSUE_TYPE_3,
+  FIELD_NAME_GROUP_ISSUE_TYPE_4,
+  FIELD_NAME_GROUP_ISSUE_TYPE_5,
+  FIELD_NAME_GROUP_ISSUE_TYPE_6,
+  FIELD_NAME_GROUP_ISSUE_TYPE_7,
+  FIELD_NAME_GROUP_ISSUE_TYPE_8,
+  FIELD_NAME_GROUP_ISSUE_TYPE_9,
+  FIELD_NAME_GROUP_ISSUE_TYPE_10,
 } from "./const";
 
 const Edit = (props) => {
@@ -39,6 +62,26 @@ const Edit = (props) => {
     termType,
     dateFrom,
     dateTo,
+    groupIssueType1,
+    groupIssueType2,
+    groupIssueType3,
+    groupIssueType4,
+    groupIssueType5,
+    groupIssueType6,
+    groupIssueType7,
+    groupIssueType8,
+    groupIssueType9,
+    groupIssueType10,
+    groupLabel1,
+    groupLabel2,
+    groupLabel3,
+    groupLabel4,
+    groupLabel5,
+    groupLabel6,
+    groupLabel7,
+    groupLabel8,
+    groupLabel9,
+    groupLabel10,
   } = props;
   const [projectResponseJson, setProjectResponseJson] = useState();
   const [issueTypeResponseJson, setIssueTypeResponseJson] = useState();
@@ -184,6 +227,12 @@ const Edit = (props) => {
     { name: "termType", value: TERM_TYPE.PAST_6_MONTH, label: "Past 6 Months" },
     { name: "termType", value: TERM_TYPE.DATE_RANGE, label: "Date Range" },
   ];
+  const groupIssueTypeOptions = issueTypeResponseJson
+    ? issueTypeResponseJson.map((issueType) => ({
+        label: issueType.name,
+        value: issueType.name,
+      }))
+    : [];
 
   const handleProjectChange = (data) => {
     setSelectedProject(data);
@@ -270,159 +319,7 @@ const Edit = (props) => {
     <Form onSubmit={handleSave}>
       {({ formProps, submitting }) => (
         <form {...formProps}>
-          <Box>
-            <Field name={FIELD_NAME_PROJECT} label="Project" isRequired>
-              {({ fieldProps }) => (
-                <Select
-                  {...fieldProps}
-                  defaultValue={project}
-                  options={projectOptions}
-                  onChange={handleProjectChange}
-                />
-              )}
-            </Field>
-            <Field name={FIELD_NAME_ISSUE_TYPE} label="Issue Type" isRequired>
-              {({ fieldProps }) => (
-                <Select
-                  {...fieldProps}
-                  defaultValue={issueType}
-                  options={issueTypeOptions}
-                  isMulti
-                  onChange={handleIssueTypeChange}
-                />
-              )}
-            </Field>
-            <Field name={FIELD_NAME_TARGET_TYPE} label="Target Type">
-              {({ fieldProps }) => (
-                <RadioGroup
-                  {...fieldProps}
-                  defaultValue={targetType}
-                  options={targetTypeOptions}
-                  onChange={handleTargetTypeChange}
-                  isDisabled={selectedReportMode === REPORT_MODE.CFD}
-                />
-              )}
-            </Field>
-            <Field
-              name={FIELD_NAME_CUSTOM_TARGET_TYPE_FIELD}
-              label="Target Type Custom Field"
-            >
-              {({ fieldProps }) => (
-                <Select
-                  {...fieldProps}
-                  defaultValue={customTargetTypeField}
-                  options={customTargetTypeFieldOptions}
-                  onChange={handleCustomTargetTypeFieldChange}
-                  isDisabled={
-                    selectedTargetType !== TARGET_TYPE.CUSTOM ||
-                    selectedReportMode === REPORT_MODE.CFD
-                  }
-                />
-              )}
-            </Field>
-          </Box>
-          <Box>
-            <Field name={FIELD_NAME_REPORT_TYPE} label="X-Axis">
-              {({ fieldProps }) => (
-                <RadioGroup
-                  {...fieldProps}
-                  defaultValue={reportType}
-                  options={reportTypeOptions}
-                  onChange={handleReportTypeChange}
-                />
-              )}
-            </Field>
-            <Field
-              name={FIELD_NAME_CUSTOM_REPORT_TYPE_FIELD}
-              label="X-Axis Custom Field"
-            >
-              {({ fieldProps }) => (
-                <Select
-                  {...fieldProps}
-                  defaultValue={customReportTypeField}
-                  options={customReportTypeFieldOptions}
-                  onChange={handleCustomReportTypeFieldChange}
-                  isDisabled={
-                    selectedReportType !== REPORT_TYPE.CUSTOM ||
-                    selectedReportMode === REPORT_MODE.CFD
-                  }
-                />
-              )}
-            </Field>
-            <Field name={FIELD_NAME_NUMBER_FIELD} label="Y-Axis" isRequired>
-              {({ fieldProps }) => (
-                <Select
-                  {...fieldProps}
-                  defaultValue={numberField}
-                  options={numberFieldOptions}
-                  onChange={handleNumberFieldChange}
-                  isDisabled={selectedReportMode === REPORT_MODE.CFD}
-                />
-              )}
-            </Field>
-            <Field name={FIELD_NAME_REPORT_MODE} label="Report Mode">
-              {({ fieldProps }) => (
-                <RadioGroup
-                  {...fieldProps}
-                  defaultValue={reportMode}
-                  options={reportModeOptions}
-                  onChange={handleReportModeChange}
-                />
-              )}
-            </Field>
-          </Box>
-          <Box>
-            <Field
-              name={FIELD_NAME_DATE_TIME_FIELD}
-              label="Target Date Field"
-              isRequired
-            >
-              {({ fieldProps }) => (
-                <Select
-                  {...fieldProps}
-                  defaultValue={dateTimeField}
-                  options={dateTimeFieldOptions}
-                  onChange={handleDateTimeFieldChange}
-                  isDisabled={selectedReportMode === REPORT_MODE.CFD}
-                />
-              )}
-            </Field>{" "}
-            <Field name={FIELD_NAME_TERM_TYPE} label="Term Type">
-              {({ fieldProps }) => (
-                <RadioGroup
-                  {...fieldProps}
-                  defaultValue={termType}
-                  options={termTypeOptions}
-                  onChange={handleTermTypeChange}
-                />
-              )}
-            </Field>
-            <Field
-              name={FIELD_NAME_DATE_FROM}
-              label="From"
-              defaultValue={dateFrom}
-            >
-              {({ fieldProps }) => (
-                <DatePicker
-                  {...fieldProps}
-                  weekStartDay={1}
-                  dateFormat="YYYY-MM-DD"
-                  isDisabled={selectedTermType !== TERM_TYPE.DATE_RANGE}
-                />
-              )}
-            </Field>
-            <Field name={FIELD_NAME_DATE_TO} label="To" defaultValue={dateTo}>
-              {({ fieldProps }) => (
-                <DatePicker
-                  {...fieldProps}
-                  weekStartDay={1}
-                  dateFormat="YYYY-MM-DD"
-                  isDisabled={selectedTermType !== TERM_TYPE.DATE_RANGE}
-                />
-              )}
-            </Field>
-          </Box>
-          <FormFooter>
+          <Inline alignInline="end">
             <ButtonGroup>
               <Button appearance="subtle" onClick={handleCancel}>
                 Cancel
@@ -443,7 +340,366 @@ const Edit = (props) => {
                 Save
               </Button>
             </ButtonGroup>
-          </FormFooter>
+          </Inline>
+          <Box>
+            <Tabs id="default">
+              <TabList>
+                <Tab>Target</Tab>
+                <Tab>Axis</Tab>
+                <Tab>Report</Tab>
+                <Tab>Term</Tab>
+                <Tab>Issue Group</Tab>
+              </TabList>
+              <TabPanel>
+                <Box>
+                  <Field name={FIELD_NAME_PROJECT} label="Project" isRequired>
+                    {({ fieldProps }) => (
+                      <Select
+                        {...fieldProps}
+                        defaultValue={project}
+                        options={projectOptions}
+                        onChange={handleProjectChange}
+                      />
+                    )}
+                  </Field>
+                  <Field name={FIELD_NAME_ISSUE_TYPE} isRequired>
+                    {({ fieldProps }) => (
+                      <Select
+                        {...fieldProps}
+                        defaultValue={issueType}
+                        options={issueTypeOptions}
+                        isMulti
+                        onChange={handleIssueTypeChange}
+                      />
+                    )}
+                  </Field>
+                  <Field name={FIELD_NAME_TARGET_TYPE} label="Target Type">
+                    {({ fieldProps }) => (
+                      <RadioGroup
+                        {...fieldProps}
+                        defaultValue={targetType}
+                        options={targetTypeOptions}
+                        onChange={handleTargetTypeChange}
+                        isDisabled={selectedReportMode === REPORT_MODE.CFD}
+                      />
+                    )}
+                  </Field>
+                  <Field
+                    name={FIELD_NAME_CUSTOM_TARGET_TYPE_FIELD}
+                    label="Target Type Custom Field"
+                  >
+                    {({ fieldProps }) => (
+                      <Select
+                        {...fieldProps}
+                        defaultValue={customTargetTypeField}
+                        options={customTargetTypeFieldOptions}
+                        onChange={handleCustomTargetTypeFieldChange}
+                        isDisabled={
+                          selectedTargetType !== TARGET_TYPE.CUSTOM ||
+                          selectedReportMode === REPORT_MODE.CFD
+                        }
+                      />
+                    )}
+                  </Field>
+                </Box>
+              </TabPanel>
+              <TabPanel>
+                <Box>
+                  <Field name={FIELD_NAME_REPORT_TYPE} label="X-Axis">
+                    {({ fieldProps }) => (
+                      <RadioGroup
+                        {...fieldProps}
+                        defaultValue={reportType}
+                        options={reportTypeOptions}
+                        onChange={handleReportTypeChange}
+                      />
+                    )}
+                  </Field>
+                  <Field
+                    name={FIELD_NAME_CUSTOM_REPORT_TYPE_FIELD}
+                    label="X-Axis Custom Field"
+                  >
+                    {({ fieldProps }) => (
+                      <Select
+                        {...fieldProps}
+                        defaultValue={customReportTypeField}
+                        options={customReportTypeFieldOptions}
+                        onChange={handleCustomReportTypeFieldChange}
+                        isDisabled={
+                          selectedReportType !== REPORT_TYPE.CUSTOM ||
+                          selectedReportMode === REPORT_MODE.CFD
+                        }
+                      />
+                    )}
+                  </Field>
+                  <Field
+                    name={FIELD_NAME_NUMBER_FIELD}
+                    label="Y-Axis"
+                    isRequired
+                  >
+                    {({ fieldProps }) => (
+                      <Select
+                        {...fieldProps}
+                        defaultValue={numberField}
+                        options={numberFieldOptions}
+                        onChange={handleNumberFieldChange}
+                        isDisabled={selectedReportMode === REPORT_MODE.CFD}
+                      />
+                    )}
+                  </Field>
+                </Box>
+              </TabPanel>
+              <TabPanel>
+                <Box>
+                  <Field name={FIELD_NAME_REPORT_MODE} label="Report Mode">
+                    {({ fieldProps }) => (
+                      <RadioGroup
+                        {...fieldProps}
+                        defaultValue={reportMode}
+                        options={reportModeOptions}
+                        onChange={handleReportModeChange}
+                      />
+                    )}
+                  </Field>
+                </Box>
+              </TabPanel>
+              <TabPanel>
+                <Box>
+                  <Field
+                    name={FIELD_NAME_DATE_TIME_FIELD}
+                    label="Target Date Field"
+                    isRequired
+                  >
+                    {({ fieldProps }) => (
+                      <Select
+                        {...fieldProps}
+                        defaultValue={dateTimeField}
+                        options={dateTimeFieldOptions}
+                        onChange={handleDateTimeFieldChange}
+                        isDisabled={selectedReportMode === REPORT_MODE.CFD}
+                      />
+                    )}
+                  </Field>{" "}
+                  <Field name={FIELD_NAME_TERM_TYPE} label="Term Type">
+                    {({ fieldProps }) => (
+                      <RadioGroup
+                        {...fieldProps}
+                        defaultValue={termType}
+                        options={termTypeOptions}
+                        onChange={handleTermTypeChange}
+                      />
+                    )}
+                  </Field>
+                  <Field
+                    name={FIELD_NAME_DATE_FROM}
+                    label="From"
+                    defaultValue={dateFrom}
+                  >
+                    {({ fieldProps }) => (
+                      <DatePicker
+                        {...fieldProps}
+                        weekStartDay={1}
+                        dateFormat="YYYY-MM-DD"
+                        isDisabled={selectedTermType !== TERM_TYPE.DATE_RANGE}
+                      />
+                    )}
+                  </Field>
+                  <Field
+                    name={FIELD_NAME_DATE_TO}
+                    label="To"
+                    defaultValue={dateTo}
+                  >
+                    {({ fieldProps }) => (
+                      <DatePicker
+                        {...fieldProps}
+                        weekStartDay={1}
+                        dateFormat="YYYY-MM-DD"
+                        isDisabled={selectedTermType !== TERM_TYPE.DATE_RANGE}
+                      />
+                    )}
+                  </Field>
+                </Box>
+              </TabPanel>
+              <TabPanel>
+                <Box>
+                  <Inline>
+                    <Field name={FIELD_NAME_GROUP_LABEL_1}>
+                      {({ fieldProps }) => (
+                        <Textfield {...fieldProps} defaultValue={groupLabel1} />
+                      )}
+                    </Field>{" "}
+                    <Field name={FIELD_NAME_GROUP_ISSUE_TYPE_1}>
+                      {({ fieldProps }) => (
+                        <Select
+                          {...fieldProps}
+                          defaultValue={groupIssueType1}
+                          options={groupIssueTypeOptions}
+                          isMulti
+                        />
+                      )}
+                    </Field>{" "}
+                  </Inline>
+                  <Inline>
+                    <Field name={FIELD_NAME_GROUP_LABEL_2}>
+                      {({ fieldProps }) => (
+                        <Textfield {...fieldProps} defaultValue={groupLabel2} />
+                      )}
+                    </Field>{" "}
+                    <Field name={FIELD_NAME_GROUP_ISSUE_TYPE_2}>
+                      {({ fieldProps }) => (
+                        <Select
+                          {...fieldProps}
+                          defaultValue={groupIssueType2}
+                          options={groupIssueTypeOptions}
+                          isMulti
+                        />
+                      )}
+                    </Field>{" "}
+                  </Inline>
+                  <Inline>
+                    <Field name={FIELD_NAME_GROUP_LABEL_3}>
+                      {({ fieldProps }) => (
+                        <Textfield {...fieldProps} defaultValue={groupLabel3} />
+                      )}
+                    </Field>{" "}
+                    <Field name={FIELD_NAME_GROUP_ISSUE_TYPE_3}>
+                      {({ fieldProps }) => (
+                        <Select
+                          {...fieldProps}
+                          defaultValue={groupIssueType3}
+                          options={groupIssueTypeOptions}
+                          isMulti
+                        />
+                      )}
+                    </Field>{" "}
+                  </Inline>
+                  <Inline>
+                    <Field name={FIELD_NAME_GROUP_LABEL_4}>
+                      {({ fieldProps }) => (
+                        <Textfield {...fieldProps} defaultValue={groupLabel4} />
+                      )}
+                    </Field>{" "}
+                    <Field name={FIELD_NAME_GROUP_ISSUE_TYPE_4}>
+                      {({ fieldProps }) => (
+                        <Select
+                          {...fieldProps}
+                          defaultValue={groupIssueType4}
+                          options={groupIssueTypeOptions}
+                          isMulti
+                        />
+                      )}
+                    </Field>{" "}
+                  </Inline>
+                  <Inline>
+                    <Field name={FIELD_NAME_GROUP_LABEL_5}>
+                      {({ fieldProps }) => (
+                        <Textfield {...fieldProps} defaultValue={groupLabel5} />
+                      )}
+                    </Field>{" "}
+                    <Field name={FIELD_NAME_GROUP_ISSUE_TYPE_5}>
+                      {({ fieldProps }) => (
+                        <Select
+                          {...fieldProps}
+                          defaultValue={groupIssueType5}
+                          options={groupIssueTypeOptions}
+                          isMulti
+                        />
+                      )}
+                    </Field>{" "}
+                  </Inline>
+                  <Inline>
+                    <Field name={FIELD_NAME_GROUP_LABEL_6}>
+                      {({ fieldProps }) => (
+                        <Textfield {...fieldProps} defaultValue={groupLabel6} />
+                      )}
+                    </Field>{" "}
+                    <Field name={FIELD_NAME_GROUP_ISSUE_TYPE_6}>
+                      {({ fieldProps }) => (
+                        <Select
+                          {...fieldProps}
+                          defaultValue={groupIssueType6}
+                          options={groupIssueTypeOptions}
+                          isMulti
+                        />
+                      )}
+                    </Field>{" "}
+                  </Inline>
+                  <Inline>
+                    <Field name={FIELD_NAME_GROUP_LABEL_7}>
+                      {({ fieldProps }) => (
+                        <Textfield {...fieldProps} defaultValue={groupLabel7} />
+                      )}
+                    </Field>{" "}
+                    <Field name={FIELD_NAME_GROUP_ISSUE_TYPE_7}>
+                      {({ fieldProps }) => (
+                        <Select
+                          {...fieldProps}
+                          defaultValue={groupIssueType7}
+                          options={groupIssueTypeOptions}
+                          isMulti
+                        />
+                      )}
+                    </Field>{" "}
+                  </Inline>
+                  <Inline>
+                    <Field name={FIELD_NAME_GROUP_LABEL_8}>
+                      {({ fieldProps }) => (
+                        <Textfield {...fieldProps} defaultValue={groupLabel8} />
+                      )}
+                    </Field>{" "}
+                    <Field name={FIELD_NAME_GROUP_ISSUE_TYPE_8}>
+                      {({ fieldProps }) => (
+                        <Select
+                          {...fieldProps}
+                          defaultValue={groupIssueType8}
+                          options={groupIssueTypeOptions}
+                          isMulti
+                        />
+                      )}
+                    </Field>{" "}
+                  </Inline>
+                  <Inline>
+                    <Field name={FIELD_NAME_GROUP_LABEL_9}>
+                      {({ fieldProps }) => (
+                        <Textfield {...fieldProps} defaultValue={groupLabel9} />
+                      )}
+                    </Field>{" "}
+                    <Field name={FIELD_NAME_GROUP_ISSUE_TYPE_9}>
+                      {({ fieldProps }) => (
+                        <Select
+                          {...fieldProps}
+                          defaultValue={groupIssueType9}
+                          options={groupIssueTypeOptions}
+                          isMulti
+                        />
+                      )}
+                    </Field>{" "}
+                  </Inline>
+                  <Inline>
+                    <Field name={FIELD_NAME_GROUP_LABEL_10}>
+                      {({ fieldProps }) => (
+                        <Textfield
+                          {...fieldProps}
+                          defaultValue={groupLabel10}
+                        />
+                      )}
+                    </Field>{" "}
+                    <Field name={FIELD_NAME_GROUP_ISSUE_TYPE_10}>
+                      {({ fieldProps }) => (
+                        <Select
+                          {...fieldProps}
+                          defaultValue={groupIssueType10}
+                          options={groupIssueTypeOptions}
+                          isMulti
+                        />
+                      )}
+                    </Field>{" "}
+                  </Inline>
+                </Box>
+              </TabPanel>
+            </Tabs>
+          </Box>
+          <Box padding="space.1000"></Box>
         </form>
       )}
     </Form>

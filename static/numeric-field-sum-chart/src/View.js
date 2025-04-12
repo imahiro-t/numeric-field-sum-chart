@@ -54,6 +54,26 @@ const View = (props) => {
     termType,
     dateFrom,
     dateTo,
+    groupIssueType1,
+    groupIssueType2,
+    groupIssueType3,
+    groupIssueType4,
+    groupIssueType5,
+    groupIssueType6,
+    groupIssueType7,
+    groupIssueType8,
+    groupIssueType9,
+    groupIssueType10,
+    groupLabel1,
+    groupLabel2,
+    groupLabel3,
+    groupLabel4,
+    groupLabel5,
+    groupLabel6,
+    groupLabel7,
+    groupLabel8,
+    groupLabel9,
+    groupLabel10,
   } = props;
 
   const reportTypeLabel =
@@ -96,6 +116,63 @@ const View = (props) => {
     sixMonthAgo.setMonth(sixMonthAgo.getMonth() - 6);
   }
 
+  const initIssueGroups = () => {
+    const issueGroups = [];
+    if (groupLabel1.length > 0 && groupIssueType1.length > 0)
+      issueGroups.push({ label: groupLabel1, types: groupIssueType1 });
+    if (groupLabel2.length > 0 && groupIssueType2.length > 0)
+      issueGroups.push({ label: groupLabel2, types: groupIssueType2 });
+    if (groupLabel3.length > 0 && groupIssueType3.length > 0)
+      issueGroups.push({ label: groupLabel3, types: groupIssueType3 });
+    if (groupLabel4.length > 0 && groupIssueType4.length > 0)
+      issueGroups.push({ label: groupLabel4, types: groupIssueType4 });
+    if (groupLabel5.length > 0 && groupIssueType5.length > 0)
+      issueGroups.push({ label: groupLabel5, types: groupIssueType5 });
+    if (groupLabel6.length > 0 && groupIssueType6.length > 0)
+      issueGroups.push({ label: groupLabel6, types: groupIssueType6 });
+    if (groupLabel7.length > 0 && groupIssueType7.length > 0)
+      issueGroups.push({ label: groupLabel7, types: groupIssueType7 });
+    if (groupLabel8.length > 0 && groupIssueType8.length > 0)
+      issueGroups.push({ label: groupLabel8, types: groupIssueType8 });
+    if (groupLabel9.length > 0 && groupIssueType9.length > 0)
+      issueGroups.push({ label: groupLabel9, types: groupIssueType9 });
+    if (groupLabel10.length > 0 && groupIssueType10.length > 0)
+      issueGroups.push({ label: groupLabel10, types: groupIssueType10 });
+    return issueGroups;
+  };
+
+  const mergeIssueGroup = (records) => {
+    const issueGroups = initIssueGroups();
+    if (records && issueGroups.length > 0) {
+      const newRecords = [];
+      records.forEach((record) => {
+        const issueGroup = issueGroups.find((issueGroup) =>
+          issueGroup.types.find((type) => type.value === record.target)
+        );
+        if (issueGroup) {
+          const found = newRecords.find(
+            (newRecord) =>
+              newRecord.term === record.term &&
+              newRecord.target === issueGroup.label
+          );
+          if (found) {
+            found.count = found.count + record.count;
+            found.sum = found.sum + record.sum;
+          } else {
+            const newRecord = structuredClone(record);
+            newRecord.target = issueGroup.label;
+            newRecords.push(newRecord);
+          }
+        } else {
+          newRecords.push(structuredClone(record));
+        }
+      });
+      return newRecords;
+    } else {
+      return records;
+    }
+  };
+
   useEffect(() => {
     if (
       project &&
@@ -134,7 +211,13 @@ const View = (props) => {
             ? formatDate(currentDate)
             : dateTo,
         isCumulative: reportMode === REPORT_MODE.CFD,
-      }).then(setIssueResponseJson);
+      }).then((json) => {
+        if (targetType === TARGET_TYPE.ISSUE) {
+          setIssueResponseJson(mergeIssueGroup(json));
+        } else {
+          setIssueResponseJson(json);
+        }
+      });
     }
   }, []);
 
