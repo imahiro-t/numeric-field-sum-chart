@@ -567,24 +567,22 @@ const View = (props) => {
 
   return issueResponseJson ? (
     <>
-      {reportMode !== REPORT_MODE.TABLE && reportMode !== REPORT_MODE.CFD && (
+      {reportMode !== REPORT_MODE.TABLE && (
         <Inline alignBlock="center" spread="end">
-          {reportMode !== REPORT_MODE.PIE &&
-            reportMode !== REPORT_MODE.DOUGHNUT && (
-              <IconButton
-                icon={(iconProps) => (
-                  <ChartIcon
-                    {...iconProps}
-                    size="small"
-                    mode={chartVisibleMode}
-                  />
-                )}
-                appearance="subtle"
-                spacing="compact"
-                onClick={() => toggleChartVisible(chartRef)}
-                isTooltipDisabled={true}
-              ></IconButton>
+          <IconButton
+            icon={(iconProps) => (
+              <ChartIcon {...iconProps} size="small" mode={chartVisibleMode} />
             )}
+            appearance="subtle"
+            spacing="compact"
+            isDisabled={
+              reportMode === REPORT_MODE.CFD ||
+              reportMode === REPORT_MODE.PIE ||
+              reportMode === REPORT_MODE.DOUGHNUT
+            }
+            onClick={() => toggleChartVisible(chartRef)}
+            isTooltipDisabled={true}
+          ></IconButton>
           <IconButton
             icon={(iconProps) => (
               <SecondaryChartIcon
@@ -595,6 +593,7 @@ const View = (props) => {
             )}
             appearance="subtle"
             spacing="compact"
+            isDisabled={reportMode === REPORT_MODE.CFD}
             onClick={() => toggleSecondChartVisible(chartRef)}
             isTooltipDisabled={true}
           ></IconButton>
