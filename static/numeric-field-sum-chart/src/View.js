@@ -315,6 +315,7 @@ const View = (props) => {
     const datasets = Object.keys(valueMap).map((target, index) => ({
       label: target,
       data: valueMap[target],
+      originalData: Array.from(valueMap[target]),
       borderColor: sumColors[index % sumColors.length],
       backgroundColor: sumColors[index % sumColors.length],
     }));
@@ -333,6 +334,7 @@ const View = (props) => {
     const datasets = Object.keys(valueMap).map((target, index) => ({
       label: target,
       data: valueMap[target],
+      originalData: Array.from(valueMap[target]),
       borderColor: countColors[index % countColors.length],
       backgroundColor: countColors[index % countColors.length],
     }));
@@ -459,6 +461,15 @@ const View = (props) => {
         },
       ],
     }));
+  };
+
+  const toolTipLabelForRatioChart = (context) => {
+    const label = context.dataset.label || "";
+    const data = context.dataset.data[context.dataIndex] || "";
+    const originalData = context.dataset.originalData[context.dataIndex] || "";
+    return label
+      ? `${label}: ${data > 0 ? data.toFixed(2) : data} (${originalData})`
+      : label;
   };
 
   const head = {
@@ -879,6 +890,11 @@ const View = (props) => {
                         ? `Sum of ${numberField.label}`
                         : `Count of ${targetTypeLabel}`,
                   },
+                  tooltip: {
+                    callbacks: {
+                      label: toolTipLabelForRatioChart,
+                    },
+                  },
                 },
               }}
               data={createDataForSum(issueResponseJson, true)}
@@ -906,6 +922,11 @@ const View = (props) => {
                         title: {
                           display: true,
                           text: `Count of ${targetTypeLabel} with ${numberField.label}`,
+                        },
+                        tooltip: {
+                          callbacks: {
+                            label: toolTipLabelForRatioChart,
+                          },
                         },
                       },
                     }}
