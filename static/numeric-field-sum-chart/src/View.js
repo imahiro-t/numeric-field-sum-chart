@@ -468,7 +468,7 @@ const View = (props) => {
     const data = context.dataset.data[context.dataIndex] || "";
     const originalData = context.dataset.originalData[context.dataIndex] || "";
     return label
-      ? `${label}: ${data > 0 ? data.toFixed(2) : data} (${originalData})`
+      ? `${label}: ${data > 0 ? data.toFixed(2) : data}% (${originalData})`
       : label;
   };
 
