@@ -1014,7 +1014,7 @@ const View = (props) => {
                     },
                   },
                 }}
-                data={createDataForSum(issueResponseJson, true)}
+                data={createDataForSum(issueResponseJson)}
               />
             )}
           </Box>
