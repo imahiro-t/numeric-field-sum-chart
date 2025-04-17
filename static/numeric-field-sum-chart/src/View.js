@@ -239,6 +239,27 @@ const View = (props) => {
       : [];
   };
 
+  const sortTargets = (targets) => {
+    const issueGroups = initIssueGroups();
+    if (issueGroups.length > 0) {
+      const groupLabels = [];
+      const nonGroupLabels = [];
+      issueGroups.forEach((group) => {
+        if (targets.some((target) => target === group.label)) {
+          groupLabels.push(group.label);
+        }
+      });
+      targets.forEach((target) => {
+        if (!issueGroups.some((group) => group.label === target)) {
+          nonGroupLabels.push(target);
+        }
+      });
+      return groupLabels.concat(nonGroupLabels);
+    } else {
+      return targets;
+    }
+  };
+
   const sumColors = [
     "rgba(255, 99, 132, 0.6)", // Red
     "rgba(53, 162, 235, 0.6)", // Blue
@@ -279,26 +300,30 @@ const View = (props) => {
       (acc, value) => createMap(value.target, value.sum, acc),
       {}
     );
-    const datasets = Object.keys(valueMap).map((target, index) => ({
-      label: target,
-      yAxisID: "y",
-      data: valueMap[target],
-      borderColor: sumColors[index % sumColors.length],
-      backgroundColor: sumColors[index % sumColors.length],
-    }));
+    const datasets = sortTargets(Object.keys(valueMap)).map(
+      (target, index) => ({
+        label: target,
+        yAxisID: "y",
+        data: valueMap[target],
+        borderColor: sumColors[index % sumColors.length],
+        backgroundColor: sumColors[index % sumColors.length],
+      })
+    );
 
     const valueMap2 = values.reduce(
       (acc, value) => createMap(value.target, value.count, acc),
       {}
     );
-    const datasets2 = Object.keys(valueMap2).map((target, index) => ({
-      type: secondType,
-      label: target,
-      yAxisID: "y1",
-      data: valueMap2[target],
-      borderColor: countColors[index % countColors.length],
-      backgroundColor: countColors[index % countColors.length],
-    }));
+    const datasets2 = sortTargets(Object.keys(valueMap2)).map(
+      (target, index) => ({
+        type: secondType,
+        label: target,
+        yAxisID: "y1",
+        data: valueMap2[target],
+        borderColor: countColors[index % countColors.length],
+        backgroundColor: countColors[index % countColors.length],
+      })
+    );
 
     return {
       labels: labels,
@@ -312,13 +337,15 @@ const View = (props) => {
       (acc, value) => createMap(value.target, value.sum, acc),
       {}
     );
-    const datasets = Object.keys(valueMap).map((target, index) => ({
-      label: target,
-      data: valueMap[target],
-      originalData: Array.from(valueMap[target]),
-      borderColor: sumColors[index % sumColors.length],
-      backgroundColor: sumColors[index % sumColors.length],
-    }));
+    const datasets = sortTargets(Object.keys(valueMap)).map(
+      (target, index) => ({
+        label: target,
+        data: valueMap[target],
+        originalData: Array.from(valueMap[target]),
+        borderColor: sumColors[index % sumColors.length],
+        backgroundColor: sumColors[index % sumColors.length],
+      })
+    );
     return {
       labels: labels,
       datasets: isRatio ? transformToRatio(datasets) : datasets,
@@ -331,13 +358,15 @@ const View = (props) => {
       (acc, value) => createMap(value.target, value.count, acc),
       {}
     );
-    const datasets = Object.keys(valueMap).map((target, index) => ({
-      label: target,
-      data: valueMap[target],
-      originalData: Array.from(valueMap[target]),
-      borderColor: countColors[index % countColors.length],
-      backgroundColor: countColors[index % countColors.length],
-    }));
+    const datasets = sortTargets(Object.keys(valueMap)).map(
+      (target, index) => ({
+        label: target,
+        data: valueMap[target],
+        originalData: Array.from(valueMap[target]),
+        borderColor: countColors[index % countColors.length],
+        backgroundColor: countColors[index % countColors.length],
+      })
+    );
     return {
       labels: labels,
       datasets: isRatio ? transformToRatio(datasets) : datasets,
