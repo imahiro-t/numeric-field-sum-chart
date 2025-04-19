@@ -202,6 +202,11 @@ const Edit = (props) => {
       value: REPORT_MODE.STACKED_BAR_WITH_LINE,
       label: "Stacked Bar with Line Chart",
     },
+    {
+      name: "reportMode",
+      value: REPORT_MODE.GROUPED_STACKED_BAR,
+      label: "Grouped Stacked Bar Chart",
+    },
     { name: "reportMode", value: REPORT_MODE.PIE, label: "Pie Chart" },
     {
       name: "reportMode",
@@ -211,7 +216,7 @@ const Edit = (props) => {
     {
       name: "reportMode",
       value: REPORT_MODE.STACKED_RATIO_BAR,
-      label: "Stacked Ratio Bar Chart",
+      label: "Ratio Bar Chart",
     },
     { name: "reportMode", value: REPORT_MODE.TABLE, label: "Table" },
     {

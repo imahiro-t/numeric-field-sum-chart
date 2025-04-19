@@ -141,13 +141,14 @@ const View = (props) => {
     return issueGroups;
   };
 
+  const issueGroups = initIssueGroups();
+
   const mergeIssueGroup = (records) => {
-    const issueGroups = initIssueGroups();
     if (records && issueGroups.length > 0) {
       const newRecords = [];
       records.forEach((record) => {
         const issueGroup = issueGroups.find((issueGroup) =>
-          issueGroup.types.find((type) => type.value === record.target)
+          issueGroup.types.some((type) => type.value === record.target)
         );
         if (issueGroup) {
           const found = newRecords.find(
@@ -212,7 +213,10 @@ const View = (props) => {
             : dateTo,
         isCumulative: reportMode === REPORT_MODE.CFD,
       }).then((json) => {
-        if (targetType === TARGET_TYPE.ISSUE) {
+        if (
+          targetType === TARGET_TYPE.ISSUE &&
+          reportMode !== REPORT_MODE.GROUPED_STACKED_BAR
+        ) {
           setIssueResponseJson(mergeIssueGroup(json));
         } else {
           setIssueResponseJson(json);
@@ -240,17 +244,28 @@ const View = (props) => {
   };
 
   const sortTargets = (targets) => {
-    const issueGroups = initIssueGroups();
     if (issueGroups.length > 0) {
       const groupLabels = [];
       const nonGroupLabels = [];
       issueGroups.forEach((group) => {
         if (targets.some((target) => target === group.label)) {
           groupLabels.push(group.label);
+        } else {
+          targets.forEach((target) => {
+            if (group.types.some((type) => type.value === target)) {
+              groupLabels.push(target);
+            }
+          });
         }
       });
       targets.forEach((target) => {
-        if (!issueGroups.some((group) => group.label === target)) {
+        if (
+          !issueGroups.some(
+            (group) =>
+              group.label === target ||
+              group.types.some((type) => type.value === target)
+          )
+        ) {
           nonGroupLabels.push(target);
         }
       });
@@ -331,42 +346,66 @@ const View = (props) => {
     };
   };
 
-  const createDataForSum = (values, isRatio = false) => {
+  const createDataForSum = (values, isRatio = false, isGroup = false) => {
     const labels = createLabels(values);
     const valueMap = values.reduce(
       (acc, value) => createMap(value.target, value.sum, acc),
       {}
     );
-    const datasets = sortTargets(Object.keys(valueMap)).map(
-      (target, index) => ({
-        label: target,
-        data: valueMap[target],
-        originalData: Array.from(valueMap[target]),
-        borderColor: sumColors[index % sumColors.length],
-        backgroundColor: sumColors[index % sumColors.length],
-      })
-    );
+    const datasets = sortTargets(Object.keys(valueMap)).map((target, index) => {
+      return isGroup
+        ? {
+            label: target,
+            data: valueMap[target],
+            originalData: Array.from(valueMap[target]),
+            borderColor: sumColors[index % sumColors.length],
+            backgroundColor: sumColors[index % sumColors.length],
+            stack:
+              issueGroups.find((issueGroup) =>
+                issueGroup.types.some((type) => type.value === target)
+              )?.label ?? "none",
+          }
+        : {
+            label: target,
+            data: valueMap[target],
+            originalData: Array.from(valueMap[target]),
+            borderColor: sumColors[index % sumColors.length],
+            backgroundColor: sumColors[index % sumColors.length],
+          };
+    });
     return {
       labels: labels,
       datasets: isRatio ? transformToRatio(datasets) : datasets,
     };
   };
 
-  const createDataForCount = (values, isRatio = false) => {
+  const createDataForCount = (values, isRatio = false, isGroup = false) => {
     const labels = createLabels(values);
     const valueMap = values.reduce(
       (acc, value) => createMap(value.target, value.count, acc),
       {}
     );
-    const datasets = sortTargets(Object.keys(valueMap)).map(
-      (target, index) => ({
-        label: target,
-        data: valueMap[target],
-        originalData: Array.from(valueMap[target]),
-        borderColor: countColors[index % countColors.length],
-        backgroundColor: countColors[index % countColors.length],
-      })
-    );
+    const datasets = sortTargets(Object.keys(valueMap)).map((target, index) => {
+      return isGroup
+        ? {
+            label: target,
+            data: valueMap[target],
+            originalData: Array.from(valueMap[target]),
+            borderColor: countColors[index % countColors.length],
+            backgroundColor: countColors[index % countColors.length],
+            stack:
+              issueGroups.find((issueGroup) =>
+                issueGroup.types.some((type) => type.value === target)
+              )?.label ?? "none",
+          }
+        : {
+            label: target,
+            data: valueMap[target],
+            originalData: Array.from(valueMap[target]),
+            borderColor: countColors[index % countColors.length],
+            backgroundColor: countColors[index % countColors.length],
+          };
+    });
     return {
       labels: labels,
       datasets: isRatio ? transformToRatio(datasets) : datasets,
@@ -888,6 +927,67 @@ const View = (props) => {
                       },
                     }}
                     data={createDataForCount(issueResponseJson)}
+                  />
+                </Box>
+              </>
+            )}
+        </>
+      )}
+      {reportMode === REPORT_MODE.GROUPED_STACKED_BAR && (
+        <>
+          <Box>
+            <Bar
+              ref={chartRef}
+              options={{
+                responsive: true,
+                x: {
+                  stacked: true,
+                },
+                y: {
+                  stacked: true,
+                },
+                plugins: {
+                  legend: {
+                    position: "bottom",
+                  },
+                  title: {
+                    display: true,
+                    text:
+                      (numberField?.value ?? "").length > 0
+                        ? `Sum of ${numberField.label}`
+                        : `Count of ${targetTypeLabel}`,
+                  },
+                },
+              }}
+              data={createDataForSum(issueResponseJson, false, true)}
+            />
+          </Box>
+          {(numberField?.value ?? "").length > 0 &&
+            secondaryChartVisibleMode === "show" && (
+              <>
+                <Box padding="space.100" />
+                <Box>
+                  <Bar
+                    ref={chartRef2}
+                    options={{
+                      responsive: true,
+                      x: {
+                        stacked: true,
+                      },
+                      y: {
+                        stacked: true,
+                      },
+                      plugins: {
+                        legend: {
+                          position: "bottom",
+                        },
+                        title: {
+                          display: true,
+                          text: `Count of ${targetTypeLabel} with ${numberField.label}`,
+                        },
+                      },
+                    }}
+                    data={createDataForCount(issueResponseJson, false, true)}
                   />
                 </Box>
               </>

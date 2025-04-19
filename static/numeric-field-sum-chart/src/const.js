@@ -4,6 +4,7 @@ export const REPORT_MODE = {
   BAR: "bar",
   BAR_WITH_LINE: "barWithLine",
   STACKED_BAR: "stackedBar",
+  GROUPED_STACKED_BAR: "groupedStackedBar",
   STACKED_RATIO_BAR: "stackedRatioBar",
   STACKED_BAR_WITH_LINE: "stackedBarWithLine",
   PIE: "pie",
