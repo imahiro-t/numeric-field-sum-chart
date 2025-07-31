@@ -98,6 +98,161 @@ resolver.define("getDateTimeFields", async (req) => {
   );
 });
 
+const buildJql = ({
+  project,
+  issueType,
+  numberField,
+  dateTimeField,
+  dateFrom,
+  dateToForQuery,
+  isCumulative,
+}) => {
+  const issueTypesCondition = (issueTypes) => {
+    if (issueType.length === 0) return "";
+    let condition = "";
+    issueTypes.forEach((issueType, index) => {
+      if (index === 0) {
+        condition = `and (issueType = '${issueType}'`;
+      } else {
+        condition = `${condition} or issueType = '${issueType}'`;
+      }
+    });
+    condition = `${condition})`;
+    return condition;
+  };
+
+  const numberFieldCondition = (numberField) => {
+    if (numberField.length === 0) return "";
+    return `and ${clauseName(numberField)} >= 0`;
+  };
+
+  return isCumulative
+    ? `project = ${project} ${issueTypesCondition(
+        issueType
+      )} and ((resolutiondate >= ${createTermCondition(
+        dateFrom
+      )} and resolutiondate < ${createTermCondition(
+        dateToForQuery
+      )} and statusCategory = Done) or statusCategory != Done) order by created DESC`
+    : `project = ${project} ${issueTypesCondition(
+        issueType
+      )} ${numberFieldCondition(numberField)} and ${clauseName(
+        dateTimeField
+      )} >= ${createTermCondition(dateFrom)} and ${clauseName(
+        dateTimeField
+      )} < ${createTermCondition(dateToForQuery)} order by ${clauseName(
+        dateTimeField
+      )} DESC`;
+};
+
+const buildSearchBody = ({
+  dateTimeField,
+  sprintField,
+  numberField,
+  targetType,
+  customTargetTypeField,
+  reportType,
+  customReportTypeField,
+  jql,
+}) => {
+  return {
+    fields: [dateTimeField, sprintField, "created", "resolutiondate"]
+      .concat(numberField.length === 0 ? [] : [numberField])
+      .concat(
+        targetType === TARGET_TYPE.ASSIGNEE
+          ? ["assignee"]
+          : targetType === TARGET_TYPE.EPIC
+          ? ["parent"]
+          : targetType === TARGET_TYPE.CUSTOM
+          ? [customTargetTypeField]
+          : ["issuetype"]
+      )
+      .concat(reportType === REPORT_TYPE.CUSTOM ? [customReportTypeField] : []),
+    fieldsByKeys: false,
+    jql: jql,
+    maxResults: SEARCH_ISSUES_MAX_RESULTS,
+    startAt: 0,
+  };
+};
+
+const enrichIssuesWithSprintData = (issues, sprintField) => {
+  const extractLastNumber = (str) => {
+    const match = str.match(/\d+$/);
+    return match ? Number(match[0]) : null;
+  };
+
+  issues.forEach((issue) => {
+    if (issue.fields[sprintField]) {
+      const latestSprintNumber = Math.max(
+        ...issue.fields[sprintField]
+          .map((sprint) => sprint.name)
+          .map(extractLastNumber)
+      );
+      const latestSprint = issue.fields[sprintField].find(
+        (sprint) => extractLastNumber(sprint.name) == latestSprintNumber
+      );
+      issue.fields["sprintNumber"] = latestSprintNumber;
+      issue.fields["sprint"] = latestSprint;
+    }
+  });
+};
+
+const getSprintRange = async ({
+  project,
+  dateFrom,
+  dateToForQuery,
+  sprintField,
+  isCumulative,
+}) => {
+  // Build JQL without issue type filter
+  const jql = isCumulative
+    ? `project = ${project} and ((resolutiondate >= ${createTermCondition(
+        dateFrom
+      )} and resolutiondate < ${createTermCondition(
+        dateToForQuery
+      )} and statusCategory = Done) or statusCategory != Done) order by created DESC`
+    : `project = ${project} and created >= ${createTermCondition(
+        dateFrom
+      )} and created < ${createTermCondition(
+        dateToForQuery
+      )} order by created DESC`;
+
+  const body = {
+    fields: [sprintField],
+    fieldsByKeys: false,
+    jql: jql,
+    maxResults: SEARCH_ISSUES_MAX_RESULTS,
+    startAt: 0,
+  };
+
+  const allIssues = await searchIssuesRecursive(body, 0, []);
+  enrichIssuesWithSprintData(allIssues, sprintField);
+
+  // Extract min and max sprint numbers
+  const minSprint = Math.min(
+    ...allIssues
+      .filter((issue) => issue.fields["sprintNumber"])
+      .filter((issue) =>
+        isCumulative
+          ? issue.fields.sprint?.endDate &&
+            new Date(issue.fields.sprint?.endDate).getTime() >
+              new Date(dateFrom).getTime()
+          : true
+      )
+      .map((issue) => issue.fields["sprintNumber"] ?? 0)
+  );
+  const maxSprint = Math.max(
+    ...allIssues
+      .filter((issue) => issue.fields["sprintNumber"])
+      .map((issue) => issue.fields["sprintNumber"] ?? 0)
+  );
+
+  return {
+    minSprint: minSprint,
+    maxSprint: maxSprint,
+  };
+};
+
 resolver.define("searchIssues", async (req) => {
   const {
     project,
@@ -119,86 +274,48 @@ resolver.define("searchIssues", async (req) => {
   const dateToForQuery = new Date(dateToStr);
   dateToForQuery.setDate(dateToForQuery.getDate() + 1);
 
-  const issueTypesCondition = (issueTypes) => {
-    if (issueType.length === 0) return "";
-    let condition = "";
-    issueTypes.forEach((issueType, index) => {
-      if (index === 0) {
-        condition = `and (issueType = '${issueType}'`;
-      } else {
-        condition = `${condition} or issueType = '${issueType}'`;
-      }
-    });
-    condition = `${condition})`;
-    return condition;
-  };
+  // Get sprint range from all issues (without issue type filter)
+  const sprintRange = await getSprintRange({
+    project,
+    dateFrom,
+    dateToForQuery,
+    sprintField,
+    isCumulative,
+  });
 
-  const numberFieldCondition = (numberField) => {
-    if (numberField.length === 0) return "";
-    return `and ${clauseName(numberField)} >= 0`;
-  };
+  const jql = buildJql({
+    project,
+    issueType,
+    numberField,
+    dateTimeField,
+    dateFrom,
+    dateToForQuery,
+    isCumulative,
+  });
 
-  const jql = isCumulative
-    ? `project = ${project} ${issueTypesCondition(
-        issueType
-      )} and ((resolutiondate >= ${createTermCondition(
-        dateFrom
-      )} and resolutiondate < ${createTermCondition(
-        dateToForQuery
-      )} and statusCategory = Done) or statusCategory != Done) order by created DESC`
-    : `project = ${project} ${issueTypesCondition(
-        issueType
-      )} ${numberFieldCondition(numberField)} and ${clauseName(
-        dateTimeField
-      )} >= ${createTermCondition(dateFrom)} and ${clauseName(
-        dateTimeField
-      )} < ${createTermCondition(dateToForQuery)} order by ${clauseName(
-        dateTimeField
-      )} DESC`;
-
-  const body = {
-    fields: [dateTimeField, sprintField, "created", "resolutiondate"]
-      .concat(numberField.length === 0 ? [] : [numberField])
-      .concat(
-        targetType === TARGET_TYPE.ASSIGNEE
-          ? ["assignee"]
-          : targetType === TARGET_TYPE.EPIC
-          ? ["parent"]
-          : targetType === TARGET_TYPE.CUSTOM
-          ? [customTargetTypeField]
-          : ["issuetype"]
-      )
-      .concat(reportType === REPORT_TYPE.CUSTOM ? [customReportTypeField] : []),
-    fieldsByKeys: false,
-    jql: jql,
-    maxResults: SEARCH_ISSUES_MAX_RESULTS,
-    startAt: 0,
-  };
+  const body = buildSearchBody({
+    dateTimeField,
+    sprintField,
+    numberField,
+    targetType,
+    customTargetTypeField,
+    reportType,
+    customReportTypeField,
+    jql,
+  });
 
   const issues = await searchIssuesRecursive(body, 0, []);
 
-  const extractLastNumber = (str) => {
-    const match = str.match(/\d+$/);
-    return match ? Number(match[0]) : null;
-  };
-
-  issues.forEach((issue) => {
-    if (issue.fields[sprintField]) {
-      const latestSprintNumber = Math.max(
-        ...issue.fields[sprintField]
-          .map((sprint) => sprint.name)
-          .map(extractLastNumber)
-      );
-      const latestSprint = issue.fields[sprintField].find(
-        (sprint) => extractLastNumber(sprint.name) == latestSprintNumber
-      );
-      issue.fields["sprintNumber"] = latestSprintNumber;
-      issue.fields["sprint"] = latestSprint;
-    }
-  });
+  enrichIssuesWithSprintData(issues, sprintField);
 
   return isCumulative
-    ? createCumulativeResponseValue(issues, reportType, dateFrom, dateTo)
+    ? createCumulativeResponseValue(
+        issues,
+        reportType,
+        dateFrom,
+        dateTo,
+        sprintRange
+      )
     : createResponseValue(
         issues,
         numberField,
@@ -208,7 +325,8 @@ resolver.define("searchIssues", async (req) => {
         reportType,
         targetType,
         dateFrom,
-        dateTo
+        dateTo,
+        sprintRange
       );
 });
 
@@ -252,25 +370,12 @@ const createCumulativeResponseValue = (
   issues,
   reportType,
   dateFrom,
-  dateTo
+  dateTo,
+  sprintRange
 ) => {
   const targetValues = ["DONE", "TODO / DOING"];
-  const minSprint = Math.min(
-    ...issues
-      .filter((issue) => issue.fields["sprintNumber"])
-      .filter(
-        (issue) =>
-          issue.fields.sprint?.endDate &&
-          new Date(issue.fields.sprint?.endDate).getTime() >
-            new Date(dateFrom).getTime()
-      )
-      .map((issue) => issue.fields["sprintNumber"] ?? 0)
-  );
-  const maxSprint = Math.max(
-    ...issues
-      .filter((issue) => issue.fields["sprintNumber"])
-      .map((issue) => issue.fields["sprintNumber"] ?? 0)
-  );
+  const minSprint = sprintRange?.minSprint;
+  const maxSprint = sprintRange?.maxSprint;
   const sprintMap = {};
   const sprintDateMap = {};
   issues.forEach((issue) => {
@@ -353,7 +458,8 @@ const createResponseValue = (
   reportType,
   targetType,
   dateFrom,
-  dateTo
+  dateTo,
+  sprintRange
 ) => {
   const targetValues =
     targetType === TARGET_TYPE.ASSIGNEE
@@ -363,16 +469,8 @@ const createResponseValue = (
       : targetType === TARGET_TYPE.CUSTOM
       ? customNames(issues, customTargetTypeField)
       : issueTypes(issues);
-  const minSprint = Math.min(
-    ...issues
-      .filter((issue) => issue.fields["sprintNumber"])
-      .map((issue) => issue.fields["sprintNumber"] ?? 0)
-  );
-  const maxSprint = Math.max(
-    ...issues
-      .filter((issue) => issue.fields["sprintNumber"])
-      .map((issue) => issue.fields["sprintNumber"] ?? 0)
-  );
+  const minSprint = sprintRange?.minSprint;
+  const maxSprint = sprintRange?.maxSprint;
   const customReportTypeOptions =
     reportType === REPORT_TYPE.CUSTOM &&
     customReportTypeField &&

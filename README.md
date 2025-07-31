@@ -11,6 +11,10 @@ Sum up any numeric value like story points in project and output monthly or week
 
 ## Release Notes
 
+### 0.0.12
+
+- ✨ Display all sprint in term condition
+
 ### 0.0.11
 
 - ✨ Add feature to select report type for CFD
