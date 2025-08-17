@@ -23,5 +23,5 @@ permissions:
     - read:jira-work
 app:
   runtime:
-    name: nodejs18.x
+    name: nodejs20.x
   id: ari:cloud:ecosystem::app/2f8df4b5-5ee0-4024-9247-e7f8a1cde3e8
