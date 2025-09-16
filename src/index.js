@@ -2,7 +2,7 @@ import Resolver from "@forge/resolver";
 import api, { route } from "@forge/api";
 import { TARGET_TYPE, REPORT_TYPE } from "./const";
 
-const SEARCH_ISSUES_MAX_RESULTS = 100;
+const SEARCH_ISSUES_MAX_RESULTS = 5000;
 
 const resolver = new Resolver();
 
@@ -171,7 +171,6 @@ const buildSearchBody = ({
     fieldsByKeys: false,
     jql: jql,
     maxResults: SEARCH_ISSUES_MAX_RESULTS,
-    startAt: 0,
   };
 };
 
@@ -222,10 +221,9 @@ const getSprintRange = async ({
     fieldsByKeys: false,
     jql: jql,
     maxResults: SEARCH_ISSUES_MAX_RESULTS,
-    startAt: 0,
   };
 
-  const allIssues = await searchIssuesRecursive(body, 0, []);
+  const allIssues = await searchIssuesRecursive(body, []);
   enrichIssuesWithSprintData(allIssues, sprintField);
 
   // Extract min and max sprint numbers
@@ -304,7 +302,7 @@ resolver.define("searchIssues", async (req) => {
     jql,
   });
 
-  const issues = await searchIssuesRecursive(body, 0, []);
+  const issues = await searchIssuesRecursive(body, []);
 
   enrichIssuesWithSprintData(issues, sprintField);
 
@@ -342,23 +340,21 @@ const getSprintFieldId = async () => {
   return sprintFields[0]?.id;
 };
 
-const searchIssuesRecursive = async (body, startAt, acc) => {
-  body.startAt = startAt;
-  const response = await api.asUser().requestJira(route`/rest/api/3/search`, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
+const searchIssuesRecursive = async (body, acc) => {
+  const response = await api
+    .asUser()
+    .requestJira(route`/rest/api/3/search/jql`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
   const json = await response.json();
-  if (json.startAt + json.maxResults < json.total) {
-    return searchIssuesRecursive(
-      body,
-      startAt + SEARCH_ISSUES_MAX_RESULTS,
-      acc.concat(json.issues ?? [])
-    );
+  if (!json.isLast && json.nextPageToken) {
+    body["nextPageToken"] = json.nextPageToken;
+    return searchIssuesRecursive(body, acc.concat(json.issues ?? []));
   } else {
     return acc.concat(json.issues ?? []);
   }
