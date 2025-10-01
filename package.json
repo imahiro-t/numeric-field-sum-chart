@@ -6,7 +6,7 @@
   "private": true,
   "devDependencies": {
     "eslint": "^9.22.0",
-    "eslint-plugin-react-hooks": "^5.2.0"
+    "eslint-plugin-react-hooks": "^6.1.0"
   },
   "dependencies": {
     "@forge/resolver": "1.6.8"
